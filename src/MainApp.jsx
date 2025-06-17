@@ -8,6 +8,7 @@ import MediosDifusion from './MediosDeDifusion';
 import SancionesPremiosMedidas from './SancionesPremiosMedidas';
 import ConfiguracionFiltros from './components/centrosdetrabajo/ConfiguracionFiltros';
 import CargaCentros from './components/centrosdetrabajo/CargaCentros';
+import UsuariosDelSistema from './Usuarios';
 
 const MainApp = () => {
   const [tab, setTab] = useState('datos');
@@ -35,6 +36,8 @@ const MainApp = () => {
         return <SancionesPremiosMedidas />;
       case 'difusion':
         return <MediosDifusion />;
+      case 'usuarios':
+        return <UsuariosDelSistema />;
       default:
         return null;
     }
@@ -70,6 +73,9 @@ const MainApp = () => {
         </button>
         <button onClick={() => setTab('difusion')} className={tab === 'difusion' ? 'bg-blue-600 text-white px-3 py-1 rounded' : 'bg-gray-200 px-3 py-1 rounded'}>
           Medios de Difusión
+        </button>
+        <button onClick={() => setTab('usuarios')} className={tab === 'usuarios' ? 'bg-blue-600 text-white px-3 py-1 rounded' : 'bg-gray-200 px-3 py-1 rounded'}>
+          Usuarios del sistema
         </button>
       </div>
 

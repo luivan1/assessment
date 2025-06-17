@@ -1,145 +1,172 @@
-import { useState } from 'react';
-import { Pencil } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Pencil, Trash2 } from 'lucide-react';
 import catalogos from './catalogo_completo_integrado.json';
 
 function Sugerencias() {
-  const [selecciones, setSelecciones] = useState({});
-  const [abiertos, setAbiertos] = useState({});
-  const [sugerencias, setSugerencias] = useState([...catalogos.sugerencias]);
+  const [sugerenciasBD, setSugerenciasBD] = useState([]);
+  const [sugerenciasEditables, setSugerenciasEditables] = useState([]);
 
-  const toggleSeleccion = (id) => {
-    setSelecciones((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        seleccionada: !prev[id]?.seleccionada
-      }
+  useEffect(() => {
+    fetch('http://localhost:8000/sugerencias')
+      .then((res) => res.json())
+      .then((data) => setSugerenciasBD(data))
+      .catch(() => setSugerenciasBD([]));
+  }, []);
+
+  useEffect(() => {
+    const items = sugerenciasBD.map((s) => ({
+      ...s,
+      editando: false,
+      titulo: s.titulo,
+      descripcion: s.descripcion,
+      titulo_original: s.titulo_original || s.titulo,
     }));
-    setAbiertos((prev) => ({ ...prev, [id]: true }));
+    setSugerenciasEditables(items);
+  }, [sugerenciasBD]);
+
+  const agregarSugerencia = (itemBase) => {
+    const nueva = {
+      cliente_id: 1,
+      titulo: itemBase.titulo,
+      descripcion: itemBase.descripcion || '',
+      titulo_original: itemBase.titulo,
+    };
+
+    fetch('http://localhost:8000/sugerencias', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nueva),
+    })
+      .then(() => fetch('http://localhost:8000/sugerencias'))
+      .then((res) => res.json())
+      .then((data) => setSugerenciasBD(data));
   };
 
   const actualizarCampo = (id, campo, valor) => {
-    setSelecciones((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [campo]: valor }
-    }));
-  };
-
-  const toggleColapsar = (id) => {
-    setAbiertos((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const agregarSimilar = (item, index) => {
-    const nuevoId = `${item.id}_copia_${Date.now()}`;
-    const clon = {
-      ...item,
-      id: nuevoId,
-      esClon: true
-    };
-    const nuevas = [...sugerencias];
-    nuevas.splice(index + 1, 0, clon);
-    setSugerencias(nuevas);
-    setAbiertos((prev) => ({ ...prev, [nuevoId]: true }));
-    setSelecciones((prev) => ({
-      ...prev,
-      [nuevoId]: { seleccionada: false }
-    }));
-  };
-
-  const eliminarClon = (id) => {
-    setSugerencias((prev) => prev.filter((s) => s.id !== id));
-    setAbiertos((prev) => {
-      const nuevo = { ...prev };
-      delete nuevo[id];
-      return nuevo;
-    });
-    setSelecciones((prev) => {
-      const nuevo = { ...prev };
-      delete nuevo[id];
-      return nuevo;
-    });
-  };
-
-  const renderContador = (valor, max) => (
-    <span className={`text-xs ml-2 ${valor.length >= max ? 'text-red-600' : 'text-gray-500'}`}>
-      {`${valor.length}/${max}`}
-    </span>
-  );
-
-  const renderItem = (item, index) => {
-    const seleccionado = !!selecciones[item.id]?.seleccionada;
-    const abierto = !!abiertos[item.id];
-    const valores = selecciones[item.id] || {};
-
-    return (
-      <div key={item.id} className="border p-4 rounded mb-4 bg-white shadow">
-        <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleColapsar(item.id)}>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={seleccionado}
-              onChange={() => toggleSeleccion(item.id)}
-            />
-            <strong>{valores.titulo || item.titulo}</strong>
-          </div>
-          <span className="text-sm text-blue-600">{abierto ? '▲' : '▼'}</span>
-        </div>
-
-        <button
-          className="text-blue-600 text-sm mt-2 hover:underline"
-          onClick={(e) => {
-            e.stopPropagation();
-            agregarSimilar(item, index);
-          }}
-        >
-          + Agregar
-        </button>
-
-        {item.esClon && (
-          <button
-            className="text-red-600 text-sm ml-4 hover:underline"
-            onClick={(e) => {
-              e.stopPropagation();
-              eliminarClon(item.id);
-            }}
-          >
-            Eliminar
-          </button>
-        )}
-
-        {abierto && seleccionado && (
-          <div className="mt-4 space-y-2">
-            <label className="block font-bold text-sm">Título</label>
-            <input
-              className="border p-1 w-full"
-              maxLength={180}
-              value={valores.titulo || item.titulo}
-              onChange={(e) => actualizarCampo(item.id, 'titulo', e.target.value)}
-            />
-            {renderContador(valores.titulo || item.titulo, 180)}
-
-            <label className="block font-bold text-sm">Descripción</label>
-            <textarea
-              className="border p-1 w-full"
-              maxLength={400}
-              value={valores.descripcion || item.descripcion}
-              onChange={(e) => actualizarCampo(item.id, 'descripcion', e.target.value)}
-            />
-            {renderContador(valores.descripcion || item.descripcion, 400)}
-          </div>
-        )}
-      </div>
+    const nuevas = sugerenciasEditables.map((item) =>
+      item.id === id ? { ...item, [campo]: valor } : item
     );
+    setSugerenciasEditables(nuevas);
+  };
+
+  const guardarSugerencia = (id) => {
+    const item = sugerenciasEditables.find((i) => i.id === id);
+
+    fetch(`http://localhost:8000/sugerencias/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    })
+      .then(() => fetch('http://localhost:8000/sugerencias'))
+      .then((res) => res.json())
+      .then((data) => setSugerenciasBD(data));
+  };
+
+  const editarSugerencia = (id, cancelar = false) => {
+    if (cancelar) {
+      fetch('http://localhost:8000/sugerencias')
+        .then((res) => res.json())
+        .then((data) => setSugerenciasBD(data));
+    } else {
+      const nuevas = sugerenciasEditables.map((item) =>
+        item.id === id ? { ...item, editando: true } : item
+      );
+      setSugerenciasEditables(nuevas);
+    }
+  };
+
+  const eliminarSugerencia = (id) => {
+    fetch(`http://localhost:8000/sugerencias/${id}`, {
+      method: 'DELETE',
+    })
+      .then(() => fetch('http://localhost:8000/sugerencias'))
+      .then((res) => res.json())
+      .then((data) => setSugerenciasBD(data));
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Sugerencias</h1>
       <p className="text-sm italic text-gray-600 mb-6">
-        Selecciona los temas sobre los que deseas recibir sugerencias de los colaboradores. Puedes modificar los textos para que reflejen mejor tu cultura interna, pero no se permiten preguntas adicionales.
+        Agrega sugerencias disponibles en el catálogo. Puedes editar su título y descripción.
       </p>
 
-      {sugerencias.map((item, index) => renderItem(item, index))}
+      <div className="flex flex-wrap gap-2 mb-6">
+        {catalogos.sugerencias.map((item) => (
+          <button
+            key={item.id}
+            className="bg-blue-100 hover:bg-blue-200 text-sm px-3 py-1 rounded"
+            onClick={() => agregarSugerencia(item)}
+          >
+            {item.titulo}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {sugerenciasEditables.map((item) => (
+          <div key={item.id} className="border p-4 rounded bg-white shadow">
+            {item.editando ? (
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-sm font-semibold">Título</label>
+                  <input
+                    className="border p-1 w-full"
+                    value={item.titulo}
+                    onChange={(e) => actualizarCampo(item.id, 'titulo', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold">Descripción</label>
+                  <textarea
+                    className="border p-1 w-full"
+                    value={item.descripcion}
+                    onChange={(e) => actualizarCampo(item.id, 'descripcion', e.target.value)}
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    className="bg-gray-300 text-sm px-3 py-1 rounded"
+                    onClick={() => editarSugerencia(item.id, true)}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    className="bg-blue-500 text-white text-sm px-4 py-1 rounded"
+                    onClick={() => guardarSugerencia(item.id)}
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold text-sm">{item.titulo}</p>
+                    <p className="text-xs italic text-red-500">{item.titulo_original}</p>
+                    <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap">{item.descripcion}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      className="text-blue-600"
+                      onClick={() => editarSugerencia(item.id)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      className="text-red-600"
+                      onClick={() => eliminarSugerencia(item.id)}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

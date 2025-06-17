@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Pencil, Save } from "lucide-react";
+import axios from "axios";
 
 const categorias = {
   DIGITAL: [
@@ -29,92 +30,140 @@ const categorias = {
   ]
 };
 
-function MediosDeDifusion() {
+export default function MediosDeDifusion() {
   const [medios, setMedios] = useState([]);
+  const [editandoId, setEditandoId] = useState(null);
+  const [etiquetaTemp, setEtiquetaTemp] = useState("");
 
-  const agregarMedio = (texto) => {
-    const nuevo = {
-      id: `${texto}-${Date.now()}`,
-      etiqueta: texto
+  useEffect(() => {
+    axios.get("http://localhost:8000/medios").then((res) => {
+      setMedios(res.data);
+    });
+  }, []);
+
+  const guardarEtiqueta = async (id) => {
+    const actualizado = medios.find((m) => m.id === id);
+    const payload = {
+      ...actualizado,
+      etiqueta: etiquetaTemp
     };
-    setMedios((prev) => [...prev, nuevo]);
-  };
-
-  const actualizarEtiqueta = (id, valor) => {
+    const res = await axios.put(`http://localhost:8000/medios/${id}`, payload);
     setMedios((prev) =>
-      prev.map((el) => (el.id === id ? { ...el, etiqueta: valor } : el))
+      prev.map((m) =>
+        m.id === id ? { ...res.data } : m
+      )
     );
+    setEditandoId(null);
+    setEtiquetaTemp("");
   };
 
-  const eliminarMedio = (id) => {
-    setMedios((prev) => prev.filter((el) => el.id !== id));
+  const eliminarMedio = async (id) => {
+    await axios.delete(`http://localhost:8000/medios/${id}`);
+    setMedios((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const agregarMedio = async (texto, categoria) => {
+    const nuevo = {
+      cliente_id: 1,
+      categoria,
+      etiqueta: texto,
+      etiqueta_original: texto,
+      visible_en_reporte: true,
+      orden: null,
+      descripcion: null
+    };
+    const res = await axios.post("http://localhost:8000/medios", nuevo);
+    setMedios((prev) => [...prev, res.data]);
   };
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">
-        Medios de difusión de Línea Ética EthicsGlobal
-      </h2>
-
+      <h2 className="text-2xl font-bold mb-4">Medios de difusión de Línea Ética EthicsGlobal</h2>
       <p className="text-gray-600 mb-6 italic">
         Selecciona los medios a través de los cuales darás a conocer la Línea Ética de EthicsGlobal.
-        <br />
-        <br />
+        <br /><br />
         Puedes:
         <ul className="list-disc list-inside ml-4">
-          <li>
-            Agregar un mismo medio más de una vez si lo utilizas en diferentes contextos
-            (por ejemplo: dos campañas distintas en correo electrónico).
-          </li>
+          <li>Agregar un mismo medio más de una vez si lo utilizas en diferentes contextos.</li>
           <li>Editar la etiqueta con el nombre de tu preferencia.</li>
         </ul>
         <br />
         ⚠️ <strong>Importante:</strong> No modifiques la etiqueta si el contenido que vas a ingresar
         pertenece a otro tipo de medio. Esto nos ayuda a evaluar correctamente el alcance e impacto
-        de tu campaña de difusión y a detectar áreas de mejora continua.
+        de tu campaña de difusión.
       </p>
 
       {Object.entries(categorias).map(([categoria, opciones]) => (
         <div key={categoria} className="mb-6">
           <h3 className="font-semibold mb-2 text-blue-800">{categoria}</h3>
-          <div className="flex flex-wrap gap-2">
-            {opciones.map((opcion, index) => (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {opciones.map((opcion, i) => (
               <button
-                key={index}
-                onClick={() => agregarMedio(opcion)}
+                key={i}
+                onClick={() => agregarMedio(opcion, categoria)}
                 className="bg-blue-100 hover:bg-blue-200 text-sm px-3 py-1 rounded"
               >
                 {opcion}
               </button>
             ))}
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {medios.filter((m) => m.categoria === categoria).map((m) => (
+              <div key={m.id} className="border p-3 rounded shadow relative">
+                {editandoId === m.id ? (
+                  <>
+                    <input
+                      className="border w-full mb-2 p-1"
+                      value={etiquetaTemp}
+                      onChange={(e) => setEtiquetaTemp(e.target.value)}
+                    />
+                    <button
+                      onClick={() => guardarEtiqueta(m.id)}
+                      className="text-sm bg-green-200 px-2 py-1 rounded mr-2"
+                    >
+                      Guardar
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditandoId(null);
+                        setEtiquetaTemp("");
+                      }}
+                      className="text-sm bg-gray-200 px-2 py-1 rounded"
+                    >
+                      Cancelar
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold text-sm mb-1">{m.etiqueta}</p>
+                    {m.etiqueta_original && m.etiqueta !== m.etiqueta_original && (
+                      <p className="text-xs italic text-red-500">* {m.etiqueta_original}</p>
+                    )}
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditandoId(m.id);
+                          setEtiquetaTemp(m.etiqueta);
+                        }}
+                        className="text-blue-600"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => eliminarMedio(m.id)}
+                        className="text-red-600"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       ))}
-
-      <h3 className="font-semibold mb-2">Medios seleccionados</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {medios.map((el) => (
-          <div key={el.id} className="border rounded p-3 bg-white shadow">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <input
-                  className="border p-1 w-full text-sm"
-                  value={el.etiqueta}
-                  onChange={(e) => actualizarEtiqueta(el.id, e.target.value)}
-                />
-              </div>
-              <button
-                onClick={() => eliminarMedio(el.id)}
-                className="text-red-600 ml-2"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
-
-export default MediosDeDifusion;

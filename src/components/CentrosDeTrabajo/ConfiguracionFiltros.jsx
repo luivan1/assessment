@@ -7,23 +7,13 @@ function CentrosDeTrabajo() {
   const [filtros, setFiltros] = useState([]);
   const [filtrosActivos, setFiltrosActivos] = useState([]);
   const [ordenFiltros, setOrdenFiltros] = useState([]);
-  const [modoEdicion, setModoEdicion] = useState(null);
 
   useEffect(() => {
-    const datosAGuardar = filtros.map(f => ({
-      nombre: f.nombre,
-      valores: f.valores
-    }));
-    localStorage.setItem('filtrosCentrosTrabajo', JSON.stringify(datosAGuardar));
-  }, [filtros]);
-
-  useEffect(() => {
-    localStorage.setItem('filtrosActivosCentrosTrabajo', JSON.stringify(filtrosActivos));
-  }, [filtrosActivos]);
-
-  useEffect(() => {
-    localStorage.setItem('ordenFiltrosCentrosTrabajo', JSON.stringify(ordenFiltros));
-  }, [ordenFiltros]); // ✅ ESTE ES EL CAMBIO
+    fetch('http://localhost:8000/filtros')
+      .then(res => res.json())
+      .then(data => setFiltros(data))
+      .catch(err => console.error('Error cargando filtros:', err));
+  }, []);
 
   const agregarValor = () => {
     const valor = valorIndividual.trim();
@@ -37,43 +27,52 @@ function CentrosDeTrabajo() {
     setValoresTemp(valoresTemp.filter(val => val !== v));
   };
 
-  const agregarFiltro = () => {
+  const agregarFiltro = async () => {
     const nombre = nuevoFiltro.trim();
-    if (!nombre || filtros.some((f) => f.nombre === nombre && f.nombre !== modoEdicion)) return;
+    if (!nombre || valoresTemp.length === 0) return;
 
-    if (modoEdicion) {
-      const nuevos = filtros.map(f =>
-        f.nombre === modoEdicion ? { nombre, valores: valoresTemp } : f
-      );
-      setFiltros(nuevos);
-      setModoEdicion(null);
-    } else {
-      setFiltros([...filtros, { nombre, valores: valoresTemp }]);
+    const nuevo = { nombre, valores: valoresTemp };
+
+    try {
+      const res = await fetch('http://localhost:8000/filtros', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nuevo),
+      });
+
+      if (res.ok) {
+        const creado = await res.json();
+        setFiltros([...filtros, creado]);
+        setNuevoFiltro('');
+        setValoresTemp([]);
+      } else {
+        const error = await res.json();
+        console.error('Error al guardar filtro:', error.detail);
+      }
+    } catch (err) {
+      console.error('Error de red:', err);
     }
-
-    setNuevoFiltro('');
-    setValoresTemp([]);
   };
 
-  const editarFiltro = (filtro) => {
-    setNuevoFiltro(filtro.nombre);
-    setValoresTemp(filtro.valores);
-    setModoEdicion(filtro.nombre);
-  };
+  const eliminarFiltro = async (nombre) => {
+    const filtro = filtros.find(f => f.nombre === nombre);
+    if (!filtro) return;
 
-  const eliminarFiltro = (nombre) => {
-    setFiltros(filtros.filter(f => f.nombre !== nombre));
-    setFiltrosActivos(filtrosActivos.filter(f => f !== nombre));
-    setOrdenFiltros(ordenFiltros.filter(f => f !== nombre));
-  };
+    try {
+      const res = await fetch(`http://localhost:8000/filtros/${filtro.id}`, {
+        method: 'DELETE',
+      });
 
-  const moverFiltro = (index, direccion) => {
-    const nuevoOrden = [...ordenFiltros];
-    const nuevoIndex = index + direccion;
-    if (nuevoIndex < 0 || nuevoIndex >= nuevoOrden.length) return;
-
-    [nuevoOrden[index], nuevoOrden[nuevoIndex]] = [nuevoOrden[nuevoIndex], nuevoOrden[index]];
-    setOrdenFiltros(nuevoOrden);
+      if (res.ok) {
+        setFiltros(filtros.filter(f => f.id !== filtro.id));
+        setFiltrosActivos(filtrosActivos.filter(f => f !== nombre));
+        setOrdenFiltros(ordenFiltros.filter(f => f !== nombre));
+      } else {
+        console.error('Error al eliminar filtro');
+      }
+    } catch (err) {
+      console.error('Error de red al eliminar:', err);
+    }
   };
 
   const alternarFiltroActivo = (nombre) => {
@@ -90,6 +89,15 @@ function CentrosDeTrabajo() {
     setOrdenFiltros(nuevoOrden);
   };
 
+  const moverFiltro = (index, direccion) => {
+    const nuevoOrden = [...ordenFiltros];
+    const nuevoIndex = index + direccion;
+    if (nuevoIndex < 0 || nuevoIndex >= nuevoOrden.length) return;
+
+    [nuevoOrden[index], nuevoOrden[nuevoIndex]] = [nuevoOrden[nuevoIndex], nuevoOrden[index]];
+    setOrdenFiltros(nuevoOrden);
+  };
+
   const todosLosFiltros = ['País', 'Estado', 'Municipio', ...filtros.map(f => f.nombre)];
 
   return (
@@ -97,7 +105,7 @@ function CentrosDeTrabajo() {
       <h1 className="text-2xl font-bold mb-4">Configuración de Filtros de Centros de Trabajo</h1>
 
       <section className="mb-6">
-        <h2 className="text-lg font-semibold mb-2">{modoEdicion ? 'Editar filtro' : 'Crear filtros personalizados'}</h2>
+        <h2 className="text-lg font-semibold mb-2">Crear filtros personalizados</h2>
         <div className="flex gap-2 mb-2">
           <input
             placeholder="Nombre del filtro"
@@ -111,6 +119,12 @@ function CentrosDeTrabajo() {
             placeholder="Agregar valor"
             value={valorIndividual}
             onChange={(e) => setValorIndividual(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                agregarValor();
+              }
+            }}
             className="border p-1 flex-1"
           />
           <button onClick={agregarValor} className="bg-gray-700 text-white px-3 py-1 rounded">+</button>
@@ -130,45 +144,14 @@ function CentrosDeTrabajo() {
             onClick={agregarFiltro}
             className="bg-blue-600 text-white px-3 py-1 rounded"
           >
-            {modoEdicion ? 'Actualizar filtro' : 'Agregar filtro'}
+            Agregar filtro
           </button>
-          {modoEdicion && (
-            <button
-              onClick={() => {
-                setModoEdicion(null);
-                setNuevoFiltro('');
-                setValoresTemp([]);
-              }}
-              className="text-sm text-gray-500 underline"
-            >
-              Cancelar
-            </button>
-          )}
         </div>
-
-        {filtros.length > 0 && (
-          <ul className="text-sm text-gray-700 list-disc ml-5 mt-4 space-y-1">
-            {filtros.map((filtro) => (
-              <li key={filtro.nombre}>
-                <strong>{filtro.nombre}:</strong> {filtro.valores.join(', ')}
-                <div className="inline ml-4 space-x-2">
-                  <button onClick={() => editarFiltro(filtro)} className="text-xs text-blue-600">✏️ Editar</button>
-                  {!filtrosActivos.includes(filtro.nombre) && (
-                    <button onClick={() => eliminarFiltro(filtro.nombre)} className="text-xs text-red-600">🗑️ Borrar</button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <h2 className="text-lg font-semibold mb-2">Filtros activos y orden</h2>
-          <p className="text-sm text-gray-600 mb-2">
-            Selecciona qué filtros se usarán para sus centros de trabajo.
-          </p>
           {todosLosFiltros.map((filtro) => (
             <div key={filtro} className="flex items-center justify-between mb-1">
               <label className="inline-flex items-center gap-2">
@@ -182,12 +165,8 @@ function CentrosDeTrabajo() {
             </div>
           ))}
         </div>
-
         <div>
           <h2 className="text-lg font-semibold mb-2">Orden de filtros activos</h2>
-          <p className="text-sm text-gray-600 mb-2">
-            Seleccione el orden en el que aparecerán sus centros de trabajo.
-          </p>
           {ordenFiltros.length > 0 ? (
             ordenFiltros.map((filtro, index) => (
               <div key={`${filtro}-${index}`} className="flex items-center justify-between mb-1">
@@ -219,6 +198,27 @@ function CentrosDeTrabajo() {
             <p className="text-sm text-gray-500">No hay filtros activos seleccionados.</p>
           )}
         </div>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold mb-2">Filtros Personalizados</h2>
+        {filtros.length > 0 ? (
+          <ul className="text-sm text-gray-700 list-disc ml-5 space-y-1">
+            {filtros.map((filtro) => (
+              <li key={filtro.nombre}>
+                <strong>{filtro.nombre}:</strong> {filtro.valores.join(', ')}
+                <button
+                  onClick={() => eliminarFiltro(filtro.nombre)}
+                  className="ml-2 text-xs text-red-600"
+                >
+                  🗑️ Borrar
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-gray-500">No hay filtros registrados aún.</p>
+        )}
       </section>
     </div>
   );

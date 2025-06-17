@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Pencil, Save, Trash2 } from "lucide-react";
 
 const opcionesDisponibles = [
   "1. Empleado, colaborador, Docente, sindicalizado",
@@ -22,168 +21,209 @@ const camposIdentidad = [
 ];
 
 function TiposDeReportante() {
-  const [seleccionados, setSeleccionados] = useState([]);
+  const [tipos, setTipos] = useState([]);
+  const [modoEdicion, setModoEdicion] = useState(null);
 
-  const agregarElemento = (opcion) => {
+  useEffect(() => {
+    cargarDesdeBackend();
+  }, []);
+
+  const cargarDesdeBackend = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/reportantes");
+      const datos = await res.json();
+      const transformados = datos.map((item) => ({
+        ...item,
+        campos: item.campos_identidad.map((label) => ({ key: label, label }))
+      }));
+      setTipos(transformados);
+    } catch (error) {
+      console.error("Error cargando tipos de reportante:", error);
+    }
+  };
+
+  const agregarNuevo = (texto) => {
     const nuevo = {
-      id: `${opcion}-${Date.now()}`,
-      texto: opcion,
-      etiqueta: opcion,
+      id: `nuevo-${Date.now()}`,
+      tipo_base: texto,
+      etiqueta: texto,
+      etiqueta_original: texto,
       anonimo: true,
-      campos: []
+      campos: [],
+      cliente_id: 1,
+      orden: tipos.length,
+      esNuevo: true
     };
-    setSeleccionados((prev) => [...prev, nuevo]);
+    setTipos((prev) => [...prev, nuevo]);
+    setModoEdicion(nuevo.id);
   };
 
-  const actualizarEtiqueta = (id, valor) => {
-    setSeleccionados((prev) =>
-      prev.map((el) => (el.id === id ? { ...el, etiqueta: valor } : el))
-    );
-  };
-
-  const actualizarAnonimo = (id) => {
-    setSeleccionados((prev) =>
-      prev.map((el) => (el.id === id ? { ...el, anonimo: !el.anonimo } : el))
+  const actualizarCampo = (id, campo, valor) => {
+    setTipos((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, [campo]: valor } : t))
     );
   };
 
   const actualizarCampoIdentidad = (id, campoKey, nuevoValor) => {
-    setSeleccionados((prev) =>
-      prev.map((el) => {
-        const sinCampo = el.campos.filter((c) => typeof c !== "object" || c.key !== campoKey);
+    setTipos((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        const camposActualizados = [...t.campos];
+        const index = camposActualizados.findIndex((c) => c.key === campoKey);
+
         if (nuevoValor === null) {
-          return { ...el, campos: sinCampo };
+          if (index !== -1) camposActualizados.splice(index, 1);
         } else {
-          return {
-            ...el,
-            campos: [...sinCampo, { key: campoKey, label: nuevoValor }]
-          };
+          if (index !== -1) {
+            camposActualizados[index].label = nuevoValor;
+          } else {
+            camposActualizados.push({ key: campoKey, label: nuevoValor });
+          }
         }
+        return { ...t, campos: camposActualizados };
       })
     );
   };
 
-  const eliminarElemento = (id) => {
-    setSeleccionados((prev) => prev.filter((el) => el.id !== id));
+  const guardar = async (tipo) => {
+    const payload = {
+      cliente_id: 1,
+      tipo_base: tipo.tipo_base,
+      etiqueta: tipo.etiqueta,
+      anonimo: tipo.anonimo,
+      orden: tipo.orden,
+      campos_identidad: tipo.campos.map((c) => c.label)
+    };
+    try {
+      const res = await fetch("http://localhost:8000/reportantes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        await cargarDesdeBackend();
+        setModoEdicion(null);
+      }
+    } catch (error) {
+      console.error("Error al guardar:", error);
+    }
   };
 
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
-    const items = Array.from(seleccionados);
-    const [reordenado] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reordenado);
-    setSeleccionados(items);
+  const eliminar = async (tipo) => {
+    if (!tipo.id || typeof tipo.id !== "number") {
+      setTipos((prev) => prev.filter((t) => t.id !== tipo.id));
+      return;
+    }
+    try {
+      await fetch(`http://localhost:8000/reportantes/${tipo.id}`, {
+        method: "DELETE"
+      });
+      await cargarDesdeBackend();
+    } catch (error) {
+      console.error("Error eliminando:", error);
+    }
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">Tipos de Reportante</h2>
-
-      <p className="text-gray-600 mb-6 italic">
-        Seleccione los diferentes tipos de denunciantes que podrán reportar en su plataforma. Usted puede elegir más de una vez un
-        elemento si así lo requiere. Por ejemplo, puede agregar tres veces "Empleado" y editar la etiqueta de cada uno (ej. Empleado de
-        confianza, Empleado sindicalizado, Gerentes, etc.). Puede cambiar la etiqueta pero no la intención (por ejemplo, no puede poner
-        un tipo de cliente si está editando un proveedor).
+      <p className="text-sm italic mb-4">
+        Puede agregar varias veces un tipo base con etiquetas distintas. Ejemplo: “Empleado sindicalizado”, “Empleado confianza”.
       </p>
 
-      <div className="mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2">
-          {opcionesDisponibles.map((opcion, index) => (
-            <button
-              key={index}
-              onClick={() => agregarElemento(opcion)}
-              className="bg-blue-100 hover:bg-blue-200 text-sm px-3 py-2 rounded text-left"
-            >
-               {opcion}
-            </button>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mb-6">
+        {opcionesDisponibles.map((op, idx) => (
+          <button
+            key={idx}
+            onClick={() => agregarNuevo(op)}
+            className="bg-blue-100 hover:bg-blue-200 px-3 py-2 text-sm rounded"
+          >
+            {op}
+          </button>
+        ))}
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="reportantes">
-          {(provided) => (
-            <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
-              {seleccionados.map((el, index) => (
-                <Draggable key={el.id} draggableId={el.id} index={index}>
-                  {(provided) => (
-                    <div
-                      className="border rounded p-4 bg-white shadow"
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <label className="block text-sm font-semibold">Etiqueta</label>
-                          <input
-                            className="border p-1 w-full"
-                            value={el.etiqueta}
-                            onChange={(e) => actualizarEtiqueta(el.id, e.target.value)}
-                          />
-
-                          <label className="inline-flex items-center mt-2 text-sm">
-                            <input
-                              type="checkbox"
-                              checked={el.anonimo}
-                              onChange={() => actualizarAnonimo(el.id)}
-                              className="mr-2"
-                            />
-                            Puede denunciar de forma anónima
-                          </label>
-
-                          <div className="mt-4">
-                            <p className="font-semibold text-sm mb-2">
-                              Campos de identidad cuando el reportante elige dejar sus datos
-                            </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                              {camposIdentidad.map((campoBase) => {
-                                const activo = el.campos.some((c) => typeof c === "object" && c.key === campoBase);
-                                const valorCampo =
-                                  el.campos.find((c) => typeof c === "object" && c.key === campoBase)?.label || campoBase;
-
-                                return (
-                                  <div key={campoBase} className="flex items-center gap-2">
-                                    <input
-                                      type="checkbox"
-                                      checked={activo}
-                                      onChange={() => {
-                                        actualizarCampoIdentidad(el.id, campoBase, activo ? null : valorCampo);
-                                      }}
-                                    />
-                                    <input
-                                      type="text"
-                                      className="border p-1 text-sm flex-1"
-                                      disabled={!activo}
-                                      value={valorCampo}
-                                      onChange={(e) => {
-                                        actualizarCampoIdentidad(el.id, campoBase, e.target.value);
-                                      }}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => eliminarElemento(el.id)}
-                          className="text-red-600 ml-4"
-                          title="Eliminar"
-                        >
-                          <X size={18} />
-                        </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {tipos.map((t) => (
+          <div key={t.id} className="border rounded p-4 shadow bg-white relative">
+            {modoEdicion === t.id ? (
+              <>
+                <input
+                  className="border p-1 w-full mb-2"
+                  value={t.etiqueta}
+                  onChange={(e) => actualizarCampo(t.id, "etiqueta", e.target.value)}
+                />
+                <label className="inline-flex items-center text-sm mb-3">
+                  <input
+                    type="checkbox"
+                    checked={t.anonimo}
+                    onChange={() => actualizarCampo(t.id, "anonimo", !t.anonimo)}
+                    className="mr-2"
+                  />
+                  Puede reportar anónimamente
+                </label>
+                <p className="text-sm font-semibold mb-2">Campos de identidad:</p>
+                <div className="space-y-2">
+                  {camposIdentidad.map((campo) => {
+                    const activo = t.campos.some((c) => c.key === campo);
+                    const valor = t.campos.find((c) => c.key === campo)?.label || campo;
+                    return (
+                      <div key={campo} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={activo}
+                          onChange={() => actualizarCampoIdentidad(t.id, campo, activo ? null : valor)}
+                        />
+                        <input
+                          type="text"
+                          disabled={!activo}
+                          value={valor}
+                          className="border p-1 text-sm flex-1"
+                          onChange={(e) => actualizarCampoIdentidad(t.id, campo, e.target.value)}
+                        />
                       </div>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => guardar(t)}
+                    className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 text-sm"
+                  >
+                    <Save size={16} className="inline-block mr-1" /> Guardar
+                  </button>
+                  <button
+                    onClick={() => setModoEdicion(null)}
+                    className="bg-gray-300 px-4 py-1 rounded text-sm"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-base mb-1">{t.etiqueta}</p>
+                <p className="text-sm text-gray-600 mb-1">{t.tipo_base}</p>
+                <p className="text-xs mb-2 italic">
+                  Anónimo: {t.anonimo ? "Sí" : "No"}
+                </p>
+                <p className="text-xs text-gray-700 mb-2">
+                  Campos: {t.campos?.map((c) => c.label).join(", ") || "Ninguno"}
+                </p>
+                <p className="text-xs italic text-red-600 mt-1">* {t.tipo_base}</p>
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <button onClick={() => setModoEdicion(t.id)} className="text-blue-600">
+                    <Pencil size={16} />
+                  </button>
+                  <button onClick={() => eliminar(t)} className="text-red-600">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
