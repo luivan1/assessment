@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, Pencil, Save, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, Pencil, Save, Trash2, Plus } from "lucide-react";
 
 const opcionesDisponibles = [
   "1. Empleado, colaborador, Docente, sindicalizado",
@@ -23,10 +23,18 @@ const camposIdentidad = [
 function TiposDeReportante() {
   const [tipos, setTipos] = useState([]);
   const [modoEdicion, setModoEdicion] = useState(null);
+  const ultimoAgregadoRef = useRef(null);
 
   useEffect(() => {
     cargarDesdeBackend();
   }, []);
+
+  // Scroll automático cuando cambian los tipos
+  useEffect(() => {
+    if (ultimoAgregadoRef.current) {
+      ultimoAgregadoRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [tipos]);
 
   const cargarDesdeBackend = async () => {
     try {
@@ -126,103 +134,127 @@ function TiposDeReportante() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">Tipos de Reportante</h2>
-      <p className="text-sm italic mb-4">
-        Puede agregar varias veces un tipo base con etiquetas distintas. Ejemplo: “Empleado sindicalizado”, “Empleado confianza”.
+      <h2 className="text-3xl font-extrabold mb-6 text-gray-800 tracking-tight">
+        Tipos de Reportante
+      </h2>
+      <p className="text-sm italic text-gray-600 mb-8 max-w-xl">
+        Puede agregar varias veces un tipo base con etiquetas distintas. Ejemplo:{" "}
+        <span className="font-semibold">Empleado sindicalizado</span>,{" "}
+        <span className="font-semibold">Empleado confianza</span>.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-8">
         {opcionesDisponibles.map((op, idx) => (
           <button
             key={idx}
             onClick={() => agregarNuevo(op)}
-            className="bg-blue-100 hover:bg-blue-200 px-3 py-2 text-sm rounded"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-1 rounded shadow transition-colors flex items-center justify-center gap-2 text-sm"
+            title={`Agregar tipo: ${op}`}
           >
-            {op}
+            <Plus size={16} />
+            <span className="truncate max-w-[150px]">{op}</span>
           </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {tipos.map((t) => (
-          <div key={t.id} className="border rounded p-4 shadow bg-white relative">
-            {modoEdicion === t.id ? (
-              <>
-                <input
-                  className="border p-1 w-full mb-2"
-                  value={t.etiqueta}
-                  onChange={(e) => actualizarCampo(t.id, "etiqueta", e.target.value)}
-                />
-                <label className="inline-flex items-center text-sm mb-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {tipos.map((t, i) => {
+          const isLast = i === tipos.length - 1;
+          return (
+            <div
+              key={t.id}
+              ref={isLast ? ultimoAgregadoRef : null}
+              className="border border-gray-300 rounded-lg p-6 shadow-md bg-white relative hover:shadow-lg transition-shadow"
+            >
+              {modoEdicion === t.id ? (
+                <>
                   <input
-                    type="checkbox"
-                    checked={t.anonimo}
-                    onChange={() => actualizarCampo(t.id, "anonimo", !t.anonimo)}
-                    className="mr-2"
+                    className="border border-gray-400 p-2 w-full mb-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={t.etiqueta}
+                    onChange={(e) => actualizarCampo(t.id, "etiqueta", e.target.value)}
                   />
-                  Puede reportar anónimamente
-                </label>
-                <p className="text-sm font-semibold mb-2">Campos de identidad:</p>
-                <div className="space-y-2">
-                  {camposIdentidad.map((campo) => {
-                    const activo = t.campos.some((c) => c.key === campo);
-                    const valor = t.campos.find((c) => c.key === campo)?.label || campo;
-                    return (
-                      <div key={campo} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={activo}
-                          onChange={() => actualizarCampoIdentidad(t.id, campo, activo ? null : valor)}
-                        />
-                        <input
-                          type="text"
-                          disabled={!activo}
-                          value={valor}
-                          className="border p-1 text-sm flex-1"
-                          onChange={(e) => actualizarCampoIdentidad(t.id, campo, e.target.value)}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <button
-                    onClick={() => guardar(t)}
-                    className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 text-sm"
-                  >
-                    <Save size={16} className="inline-block mr-1" /> Guardar
-                  </button>
-                  <button
-                    onClick={() => setModoEdicion(null)}
-                    className="bg-gray-300 px-4 py-1 rounded text-sm"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="font-semibold text-base mb-1">{t.etiqueta}</p>
-                <p className="text-sm text-gray-600 mb-1">{t.tipo_base}</p>
-                <p className="text-xs mb-2 italic">
-                  Anónimo: {t.anonimo ? "Sí" : "No"}
-                </p>
-                <p className="text-xs text-gray-700 mb-2">
-                  Campos: {t.campos?.map((c) => c.label).join(", ") || "Ninguno"}
-                </p>
-                <p className="text-xs italic text-red-600 mt-1">* {t.tipo_base}</p>
-                <div className="absolute top-2 right-2 flex gap-2">
-                  <button onClick={() => setModoEdicion(t.id)} className="text-blue-600">
-                    <Pencil size={16} />
-                  </button>
-                  <button onClick={() => eliminar(t)} className="text-red-600">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
+                  <label className="inline-flex items-center text-sm mb-4 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={t.anonimo}
+                      onChange={() => actualizarCampo(t.id, "anonimo", !t.anonimo)}
+                      className="mr-2 rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                    />
+                    Puede reportar anónimamente
+                  </label>
+                  <p className="text-sm font-semibold mb-3 text-gray-700">Campos de identidad:</p>
+                  <div className="space-y-3">
+                    {camposIdentidad.map((campo) => {
+                      const activo = t.campos.some((c) => c.key === campo);
+                      const valor = t.campos.find((c) => c.key === campo)?.label || campo;
+                      return (
+                        <div key={campo} className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={activo}
+                            onChange={() => actualizarCampoIdentidad(t.id, campo, activo ? null : valor)}
+                            className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                          />
+                          <input
+                            type="text"
+                            disabled={!activo}
+                            value={valor}
+                            className="border border-gray-300 p-2 text-sm flex-1 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onChange={(e) => actualizarCampoIdentidad(t.id, campo, e.target.value)}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => guardar(t)}
+                      className="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700 shadow-md transition-colors flex items-center gap-2"
+                    >
+                      <Save size={18} /> Guardar
+                    </button>
+                    <button
+                      onClick={() => setModoEdicion(null)}
+                      className="bg-gray-300 px-5 py-2 rounded-md hover:bg-gray-400 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-lg text-gray-900 mb-2">{t.etiqueta}</p>
+                  <p className="text-sm text-gray-600 mb-1">{t.tipo_base}</p>
+                  <p className="text-xs mb-2 italic text-gray-500">
+                    Anónimo: <span className="font-semibold">{t.anonimo ? "Sí" : "No"}</span>
+                  </p>
+                  <p className="text-xs text-gray-700 mb-3">
+                    Campos: {t.campos?.map((c) => c.label).join(", ") || "Ninguno"}
+                  </p>
+                  <p className="text-xs italic text-red-600 mt-2 select-none">* {t.tipo_base}</p>
+                  <div className="absolute top-4 right-4 flex gap-3">
+                    <button
+                      onClick={() => setModoEdicion(t.id)}
+                      className="text-blue-600 hover:text-blue-800 transition-colors"
+                      aria-label="Editar tipo de reportante"
+                      title="Editar tipo de reportante"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => eliminar(t)}
+                      className="text-red-600 hover:text-red-800 transition-colors"
+                      aria-label="Eliminar tipo de reportante"
+                      title="Eliminar tipo de reportante"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

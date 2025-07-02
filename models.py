@@ -1,6 +1,18 @@
-from sqlalchemy import Column, Integer, String, Boolean, JSON
+from sqlalchemy import Column, Integer, String, Boolean, JSON, ARRAY
 from sqlalchemy.dialects.postgresql import JSONB
 from database import Base
+from sqlalchemy.orm import relationship
+from sqlalchemy import ForeignKey
+
+# === MODELO: Cliente ===
+class Cliente(Base):
+    __tablename__ = "clientes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, unique=True, nullable=False)
+    # Aquí podrías agregar más campos si quieres (email de contacto, etc.)
+
+    
 
 # === MODELO: Centro de Trabajo ===
 class CentroTrabajo(Base):
@@ -71,14 +83,17 @@ class Denuncia(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     cliente_id = Column(Integer, nullable=False)
-    categoria = Column(String, nullable=False)
+    categoria_id = Column(Integer, nullable=False)
     titulo = Column(String, nullable=False)
     titulo_original = Column(String, nullable=False)
     descripcion = Column(String, nullable=True)
-    ejemplos = Column(JSONB, nullable=True)  # Lista de ejemplos como JSON
-    tipos_reportante = Column(JSONB, nullable=True)  # Lista de IDs o etiquetas
+    ejemplos = Column(JSONB, nullable=True)
+    tipos_reportante = Column(JSONB, nullable=True)
+    preguntaAdicional = Column(String, nullable=True)
+    anonimo = Column(Boolean, default=False)
     visible_en_reporte = Column(Boolean, default=True)
     orden = Column(Integer, nullable=True)
+    
 
     # === MODELO: Sugerencia ===
 class Sugerencia(Base):
@@ -130,3 +145,62 @@ class DatosGenerales(Base):
     ciudad = Column(String, nullable=True)
     cp = Column(String, nullable=True)
     usuario_foto_url = Column(String, nullable=True)
+
+
+    # === MODELO: Categoría de Denuncia ===
+class CategoriaDenuncia(Base):
+    __tablename__ = "categorias_denuncia"
+
+    id = Column(Integer, primary_key=True, index=True)
+    cliente_id = Column(Integer, nullable=False)
+    titulo = Column(String, nullable=False)
+    descripcion = Column(String, nullable=True)
+    orden = Column(Integer, nullable=True)
+
+
+    # === MODELO: Tipo de Denuncia Template ===
+
+class TipoDenunciaTemplate(Base):
+    __tablename__ = "tipo_denuncia_template"
+
+    id = Column(Integer, primary_key=True, index=True)
+    titulo = Column(String, nullable=False)
+    descripcion = Column(String, nullable=True)
+    ejemplos = Column(ARRAY(String), nullable=True)
+    sugeridos_reportantes = Column(ARRAY(String), nullable=True)
+    categoria_original = Column(String, nullable=True)  # <- ESTO ES CLAVE
+
+
+    # === MODELO: Usuario del sistema ===
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, nullable=False)
+    apellido = Column(String, nullable=True)
+    correo = Column(String, unique=True, nullable=False)
+    telefono = Column(String, nullable=True)
+    genero = Column(String, nullable=True)
+    fecha_nacimiento = Column(String, nullable=True)
+    direccion = Column(String, nullable=True)
+    cp = Column(String, nullable=True)
+    pais = Column(String, nullable=True)
+    estado = Column(String, nullable=True)
+    municipio = Column(String, nullable=True)
+    foto_url = Column(String, nullable=True)
+    contrasena = Column(String, nullable=True)
+    permisos = Column(JSONB, nullable=False, default=dict)
+
+
+    # === MODELO: Usuario de acceso al sistema (para login) ===
+class UsuarioAcceso(Base):
+    __tablename__ = "usuarios_acceso"
+
+    id = Column(Integer, primary_key=True, index=True)
+    correo = Column(String, unique=True, nullable=False)
+    contrasena = Column(String, nullable=False)
+    # Puedes asociarlo a cliente (opcional, si tu sistema es multicliente)
+    cliente_id = Column(Integer, nullable=True)
+    es_admin = Column(Boolean, default=False)
+    rol = Column(String, nullable=False, default="cliente")
+    organizacion = Column(String, nullable=True)

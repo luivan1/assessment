@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, List
 
 # --- Centro de Trabajo ---
@@ -97,14 +97,18 @@ class MedioDifusionSalida(MedioDifusionBase):
     class Config:
         orm_mode = True
 
+
 # --- Denuncias ---
 
 class DenunciaBase(BaseModel):
     cliente_id: int
-    categoria: str
+    categoria_id: int
     titulo: str
+    titulo_original: Optional[str] = None  # ✅ ESTA ES LA CLAVE
     descripcion: Optional[str] = None
     ejemplos: Optional[List[str]] = []
+    preguntaAdicional: Optional[str] = ""
+    anonimo: bool = False
     tipos_reportante: Optional[List[str]] = []
     visible_en_reporte: bool = True
     orden: Optional[int] = None
@@ -115,6 +119,7 @@ class DenunciaCrear(DenunciaBase):
 class DenunciaSalida(DenunciaBase):
     id: int
     titulo_original: str
+    categoria_titulo: Optional[str] = None  # útil para mostrar el nombre de la categoría si lo agregas al response
 
     class Config:
         orm_mode = True
@@ -181,3 +186,105 @@ class DatosGeneralesSalida(DatosGeneralesCrear):
 
     class Config:
         orm_mode = True
+
+
+# --- Categoría de Denuncia ---
+
+class CategoriaDenunciaBase(BaseModel):
+    cliente_id: int
+    titulo: str
+    descripcion: Optional[str] = ""
+    orden: Optional[int] = None
+
+class CategoriaDenunciaCrear(CategoriaDenunciaBase):
+    pass
+
+class CategoriaDenunciaSalida(CategoriaDenunciaBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+# --- Tipo de denuncia template ---
+
+class TipoDenunciaTemplateCrear(BaseModel):
+    titulo: str
+    descripcion: Optional[str] = None
+    ejemplos: Optional[List[str]] = []
+    sugeridos_reportantes: Optional[List[str]] = []
+    categoria_original: Optional[str] = ""
+
+    class Config:
+        from_attributes = True
+
+class TipoDenunciaTemplateOut(TipoDenunciaTemplateCrear):
+    id: int
+    categoria_original: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+# --- Usuario del sistema ---
+
+class UsuarioBase(BaseModel):
+    nombre: str
+    correo: str
+    contrasena: str  # ⚠️ En producción se recomienda usar hashing antes de guardar
+    apellido: Optional[str] = None
+    telefono: Optional[str] = None
+    genero: Optional[str] = None
+    fechaNacimiento: Optional[str] = None
+    direccion: Optional[str] = None
+    cp: Optional[str] = None
+    pais: Optional[str] = None
+    estado: Optional[str] = None
+    municipio: Optional[str] = None
+    foto: Optional[str] = None
+    permisos: Dict = {}
+
+class UsuarioCrear(UsuarioBase):
+    pass
+
+class UsuarioSalida(BaseModel):
+    id: int
+    nombre: str
+    correo: EmailStr 
+    apellido: Optional[str] = None
+    telefono: Optional[str] = None
+    genero: Optional[str] = None
+    fechaNacimiento: Optional[str] = None
+    direccion: Optional[str] = None
+    cp: Optional[str] = None
+    pais: Optional[str] = None
+    estado: Optional[str] = None
+    municipio: Optional[str] = None
+    foto: Optional[str] = None
+    permisos: Dict
+
+    class Config:
+        orm_mode = True
+
+
+
+# --- Usuario de acceso al sistema (login) ---
+
+class UsuarioAccesoBase(BaseModel):
+    correo: EmailStr
+    rol: str = "cliente"  # El rol por default
+    organizacion: Optional[str] = None 
+
+class UsuarioAccesoCrear(UsuarioAccesoBase):
+    contrasena: str
+    cliente_id: Optional[int] = None
+    es_admin: bool = False
+    organizacion: Optional[str] = None
+
+class UsuarioAccesoSalida(UsuarioAccesoBase):
+    id: int
+    cliente_id: Optional[int] = None
+    es_admin: bool = False
+    rol: str
+    organizacion: Optional[str] = None 
+
+    class Config:
+        from_attributes = True  # O usa orm_mode = True si tu versión es vieja

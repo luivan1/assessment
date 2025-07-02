@@ -1,0 +1,764 @@
+{
+  "denuncias": [
+    {
+      "categoria": "**1. INFORMACIÓN FINANCIERA**",
+      "descripcion": "Denuncias relacionadas con alteraciones, omisiones o uso indebido de registros contables, datos financieros o recursos económicos de la compañía. Incluye la manipulación de cifras, operaciones ficticias, lavado de dinero, ocultamiento de información, uso no autorizado de datos financieros y cualquier incumplimiento a las políticas contables o normativas legales aplicables.",
+      "items": [
+        {
+          "id": "denuncia_01",
+          "titulo": "1. Falsificación o manipulación de información financiera",
+          "descripcion": "Alteración, omisión o registro intencionalmente erróneo de documentos, operaciones o registros contables y financieros con el fin de engañar, ocultar irregularidades o distorsionar la situación financiera de la organización.",
+          "ejemplos": [
+            "Reportar ventas que aún no han ocurrido para inflar resultados.",
+            "Omitir gastos reales para aparentar mayores utilidades.",
+            "Incluir facturas falsas en los registros contables.",
+            "Registrar activos que no existen físicamente.- Consumo de inventarios no aplicados",
+            "Modificar manualmente un reporte financiero antes de enviarlo."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Socios"
+          ]
+        },
+        {
+          "id": "denuncia_02",
+          "titulo": "2. Uso indebido de información financiera o privilegiada",
+          "descripcion": "Acciones que impliquen el uso de información financiera confidencial o no pública para beneficio personal o de terceros, así como decisiones que generen conflictos de interés con fines especulativos o patrimoniales.",
+          "ejemplos": [
+            "Comprar acciones de la empresa antes de anunciar una fusión.",
+            "Vender titulos antes de revelar pérdidas importantes.",
+            "Compartir resultados financieros no públicos con un familiar.",
+            "Aprobar decisiones financieras que benefician a una empresa propia.",
+            "Usar datos internos para evitar una pérdidas financieras"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Socios"
+          ]
+        },
+        {
+          "id": "denuncia_03",
+          "titulo": "3. Lavado de dinero o recursos ilícitos",
+          "descripcion": "Ingreso, manejo o encubrimiento de fondos, bienes o activos provenientes de actividades ilegales o de origen no justificable, que buscan aparentar una procedencia legítima a través de la estructura financiera de la empresa.",
+          "ejemplos": [
+            "Depositar grandes cantidades de efectivo sin justificar su origen.",
+            "Registrar ingresos como si fueran ventas, pero sin actividad real.",
+            "Recibir transferencias frecuentes de cuentas extranjeras sospechosas.",
+            "Justificar recursos con facturas de servicios nunca prestados.",
+            "Hacer movimientos financieros a nombre de terceros sin relación laboral."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Socios"
+          ]
+        },
+        {
+          "id": "denuncia_04",
+          "titulo": "4. Prácticas contables indebidas o interferencia en auditorías",
+          "descripcion": "Cualquier conducta que altere, manipule o interfiera de forma indebida con auditorías internas o externas, o que implique incumplimientos a normas contables, fiscales o de control interno.",
+          "ejemplos": [
+            "Ocultar documentos contables solicitados por el auditor.",
+            "Presionar al auditor para que no registre ciertas observaciones.",
+            "Usar criterios contables distintos sin justificación para maquillar resultados.",
+            "Registrar gastos en fechas incorrectas para evitar sanciones.",
+            "Manipular información financiera antes de una revisión externa."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Socios"
+          ]
+        }
+      ]
+    },
+    {
+      "categoria": "**2. INTEGRIDAD DE LAS OPERACIONES**",
+      "descripcion": "Reportes sobre actos que comprometan la ética, legalidad o transparencia en la operación de la empresa o sus relaciones con terceros. Abarca casos de fraude, corrupción, soborno, conflictos de interés, incumplimiento normativo, abusos contractuales o prácticas indebidas con proveedores, clientes u otras partes externas.",
+      "items": [
+        {
+          "id": "denuncia_05",
+          "titulo": "5. Conflictos de interés o participación en actividades externas",
+          "descripcion": "Situaciones en las que un colaborador tiene intereses personales, familiares o externos que interfieren con sus responsabilidades hacia la compañía. Incluye negocios paralelos, relaciones con competidores o violaciones a acuerdos de no competencia.",
+          "ejemplos": [
+            "Un empleado recomienda contratar a la empresa de su cónyuge",
+            "Participar como socio en un negocio que compite con la empresa",
+            "Ser proveedor de la empresa sin declararlo previamente",
+            "Usar recursos de la empresa para un proyecto personal",
+            "Trabajar para un competidor fuera del horario laboral sin autorización"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Socios"
+          ]
+        },
+        {
+          "id": "denuncia_06",
+          "titulo": "6. Disponer, divulgar, sustraer, vulnerar o mal uso de  información confidencial",
+          "descripcion": "Acceso, uso, sustracción o divulgación no autorizada de información confidencial, estratégica o protegida de la compañía con fines personales, competitivos o en perjuicio de la organización.",
+          "ejemplos": [
+            "Enviar por correo personal un contrato confidencial",
+            "Compartir una base de datos de clientes con un amigo",
+            "Descargar información interna a un USB sin permiso",
+            "Filtrar estrategias comerciales a un tercero",
+            "Imprimir documentos sensibles y dejarlos expuestos"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Socios",
+            "Proveedores",
+            "Clientes estratégicos"
+          ]
+        },
+        {
+          "id": "denuncia_07",
+          "titulo": "7. Corrupción, sobornos o donaciones indebidas",
+          "descripcion": "Cualquier acto de ofrecer, recibir o facilitar pagos, regalos, favores, donaciones o beneficios indebidos con el objetivo de influir decisiones o obtener ventajas personales o comerciales indebidas.",
+          "ejemplos": [
+            "Ofrecer un regalo costoso a cambio de cerrar un contrato",
+            "Aceptar dinero de un proveedor por elegir su propuesta",
+            "Donar recursos de la empresa a una fundación propia sin autorización",
+            "Pagar comisiones no reportadas para agilizar trámites públicos",
+            "Entregar obsequios lujosos a funcionarios para obtener beneficios"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Socios"
+          ]
+        },
+        {
+          "id": "denuncia_08",
+          "titulo": "8. Fraude / ya sea planeado de forma individual o en colusion con un tercero",
+          "descripcion": "Engaños intencionales, manipulaciones, omisiones o abusos cometidos para obtener beneficios económicos, académicos o profesionales de forma injusta, ilegal o deshonesta.",
+          "ejemplos": [
+            "Inflar facturas para quedarse con la diferencia;",
+            "Registrar gastos de viajes no realizados",
+            "Coludirse con un proveedor para elevar precios",
+            "Usar documentos falsos para justificar compras",
+            "Alterar reportes para obtener un bono mayor"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Socios"
+          ]
+        },
+        {
+          "id": "denuncia_09",
+          "titulo": "9. Practicas comerciales inadecuadas en perjuicio de clientes, proveedores, competencia o consumidores",
+          "descripcion": "Toda conducta, acto, proceso, acción u omisión capaz de causar daños, confusión o perjuicio hacia los clientes, proveedores, competidores, productos, servicios o el mercado en general de la organización.",
+          "ejemplos": [
+            "Prometer un servicio que no se puede cumplir",
+            "Retrasar intencionalmente pagos a proveedores sin causa justificada",
+            "Copiar productos de un competidor sin autorización",
+            "No respetar precios o condiciones acordadas con clientes",
+            "Omitir información relevante al presentar un producto"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Consumidor final"
+          ]
+        },
+        {
+          "id": "denuncia_10",
+          "titulo": "10. Sospecha o falta de integridad en personas o procesos internos y externos",
+          "descripcion": "Conductas o situaciones que generen dudas sobre la honestidad, transparencia o ética de personas vinculadas a la organización, o de sus procesos, cuando puedan afectar la reputación de la organización.",
+          "ejemplos": [
+            "Un proveedor actúa de forma sospechosa durante una licitación",
+            "Un empleado maneja fondos sin justificar egresos",
+            "Un consultor ofrece resultados “garantizados” si se le paga extra",
+            "Se omiten pasos clave en un proceso crítico sin explicación",
+            "Se detecta comportamiento evasivo ante revisiones internas"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Socios"
+          ]
+        },
+        {
+          "id": "denuncia_11",
+          "titulo": "11. Incumplimiento de leyes, regulaciones o normas",
+          "descripcion": "Infracciones a leyes, regulaciones nacionales o internacionales, normativas internas o principios fundamentales. Incluye violaciones a derechos humanos, leyes de inmigración, electoral y cualquier otra acción que comprometa la legalidad o integridad ética de la organización.",
+          "ejemplos": [
+            "No reportar una actividad obligatoria por ley",
+            "Utilizar recursos de la empresa para apoyar una campaña política",
+            "Contratar a una persona sin permiso de trabajo vigente",
+            "Omitir normativas ambientales en una operación",
+            "Realizar actividades fuera del marco legal aplicable"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Consumidor final"
+          ]
+        },
+        {
+          "id": "denuncia_12",
+          "titulo": "12. Violación a las leyes de protección de datos personales",
+          "descripcion": "Uso, obtención, divulgación o transferencia de datos personales en posesión de la empresa (de sus empleados, clientes y proveedores) de forma no autorizada por la empresa; o acciones deliberadas o no intencionadas en contra de las políticas y procedimientos que regulan internamente esta materia.",
+          "ejemplos": [
+            "Compartir datos personales de clientes sin consentimiento",
+            "Dejar hojas con datos sensibles expuestas en la oficina",
+            "Enviar información personal por canales no autorizados",
+            "Usar bases de datos para fines ajenos al servicio contratado",
+            "No eliminar datos cuando ya no es legalmente necesario conservarlos"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Socios"
+          ]
+        },
+        {
+          "id": "denuncia_13",
+          "titulo": "13. Uso indebido de propiedad intelectual",
+          "descripcion": "Uso no autorizado de marcas, patentes, diseños, obras o registros, ya sea propiedad de la compañía o de terceros, sin permiso, licencia o fuera de los términos autorizados.",
+          "ejemplos": [
+            "Usar software sin licencia en la empresa;",
+            "Reproducir un logotipo de un tercero en presentaciones internas",
+            "Vender un diseño creado para la empresa a un competidor",
+            "Copiar contenido de otro sitio web sin permiso",
+            "Usar patentes registradas de otro sin pagar derechos"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Socios"
+          ]
+        }
+      ]
+    },
+    {
+      "categoria": "**3. RECURSOS HUMANOS**",
+      "descripcion": "Situaciones que afecten la dignidad, trato justo, respeto, condiciones laborales o relaciones entre colaboradores. Incluye acoso, discriminación, represalias, conflictos internos, favoritismo, problemas de desempeño, despidos injustificados y cualquier conducta que altere el ambiente laboral o contravenga las políticas de recursos humanos.",
+      "items": [
+        {
+          "id": "denuncia_14",
+          "titulo": "14. Acoso Laboral y/o psicologico, Mobbing, Hostigamiento",
+          "descripcion": "Actos, palabras o conductas que intimidan, denigran, desacreditan o generan angustia emocional. Incluye el mobbing, liderazgo abusivo o uso del poder para humillar o manipular a otros.",
+          "ejemplos": [
+            "Un jefe grita constantemente a un empleado delante de otros",
+            "Ignorar intencionalmente a un compañero en reuniones o chats de trabajo",
+            "Circular rumores malintencionados para dañar la imagen de alguien",
+            "Asignar tareas innecesarias o humillantes como castigo",
+            "Repetidas burlas o apodos que incomodan a la persona"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Exempleados"
+          ]
+        },
+        {
+          "id": "denuncia_15",
+          "titulo": "15. Discriminación",
+          "descripcion": "Trato injusto o excluyente por motivos de raza, género, edad, religión u otras condiciones personales, así como limitaciones impuestas a las oportunidades de crecimiento, expresión o participación laboral.",
+          "ejemplos": [
+            "No considerar a una persona para un ascenso por su edad",
+            "Excluir a un colaborador por su religión en actividades grupales",
+            "Hacer comentarios negativos sobre el origen nacional de alguien",
+            "Asignar tareas diferentes por prejuicios de género",
+            "Negar participación en proyectos por una discapacidad visible"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Exempleados"
+          ]
+        },
+        {
+          "id": "denuncia_16",
+          "titulo": "16. Hostigamiento o acoso sexual",
+          "descripcion": "Palabras, insinuaciones, toques o propuestas sexuales no deseadas que afectan la dignidad, integridad emocional o ambiente laboral de la persona que las recibe.",
+          "ejemplos": [
+            "Comentarios sexuales insistentes hacia una compañera",
+            "Contacto físico no solicitado, como toques o abrazos inapropiados",
+            "Enviar mensajes o imágenes con contenido sexual",
+            "Pedir favores sexuales a cambio de beneficios laborales",
+            "Hacer insinuaciones incómodas durante reuniones o eventos"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Exempleados"
+          ]
+        },
+        {
+          "id": "denuncia_17",
+          "titulo": "17. Represalias o castigos por actuar con ética o reportar incidentes en la linea etica de EthicsGlobal",
+          "descripcion": "Acciones negativas, amenazas o consecuencias injustificadas contra una persona por reportar una situación a través de la línea ética, participar en una investigación, colaborar con los procesos internos o negarse a encubrir actos indebidos.",
+          "ejemplos": [
+            "Cambiar a un denunciante de área sin justificación después de reportar un hecho",
+            "Disminuir el salario o bono tras participar en una investigación interna",
+            "Aislar a un colaborador que se negó a encubrir una irregularidad",
+            "Negarle oportunidades de crecimiento por no ser “leal” al equipo",
+            "Recibir amenazas sutiles por haber reportado una conducta indebida"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Exempleados"
+          ]
+        },
+        {
+          "id": "denuncia_18",
+          "titulo": "18. Uso indebido de la línea ética de EthicsGlobal con información falsa",
+          "descripcion": "Presentar una denuncia sabiendo que es falsa, con el objetivo de perjudicar a otra persona o a la compañía, ya sea por beneficio personal o con intención de dañar, engañar o manipular los procesos internos.",
+          "ejemplos": [
+            "Acusar falsamente a un colega por una disputa personal",
+            "Enviar una denuncia fabricada para bloquear un ascenso",
+            "Usar la línea ética para vengarse de un supervisor",
+            "Crear un caso ficticio para afectar la reputación de la empresa",
+            "Repetir acusaciones falsas para presionar a un compañero"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Socios",
+            "Exempleados"
+          ]
+        },
+        {
+          "id": "denuncia_19",
+          "titulo": "19. Nepotismo, favoritismo o contrataciones indebidasa",
+          "descripcion": "Preferencias personales en contrataciones, asignación de cargos o pagos injustificados, basados en relaciones familiares, personales o conveniencias ajenas al mérito profesional.",
+          "ejemplos": [
+            "Contratar al hijo de un gerente sin cumplir el perfil requerido",
+            "Promover a un amigo cercano por encima de candidatos más capacitados",
+            "Asignar bonos especiales a conocidos sin justificación",
+            "Dar vacaciones extendidas a familiares del jefe sin registrar",
+            "Inflar el salario de alguien por una relación personal"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Exempleados"
+          ]
+        },
+        {
+          "id": "denuncia_20",
+          "titulo": "20. Malas conductas laborales, contra la moral, bajo rendimiento o abuso de beneficios",
+          "descripcion": "Comportamientos que afectan el cumplimiento de funciones, como negarse a seguir instrucciones, mostrar un desempeño deficiente o tener actitudes disruptivas en el lugar de trabajo. Incluye también el uso indebido o el abuso de permisos, beneficios o prestaciones otorgadas por la compañía sin justificación válida.",
+          "ejemplos": [
+            "Negarse repetidamente a seguir instrucciones del supervisor",
+            "Faltar al respeto a compañeros con lenguaje agresivo",
+            "Justificar ausencias usando permisos que no corresponden",
+            "Simular enfermedad para obtener días con goce de sueldo",
+            "Uso de malas palabras u obsenidades que incomoden a los demas"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados"
+          ]
+        },
+        {
+          "id": "denuncia_21",
+          "titulo": "21. Encubrimiento, colusión o violación a la política de no complicidad",
+          "descripcion": "Conocer una conducta no ética, una violación a códigos, políticas o principios de la compañía y no reportarla constituye una forma de encubrimiento. Esta falta incluye no denunciar a través de la línea ética de EthicsGlobal o los canales internos autorizados, así como participar de forma indirecta o facilitar que el hecho continúe sin consecuencias.",
+          "ejemplos": [
+            "Ver una conducta irregular y no reportarla",
+            "Encubrir a un compañero que alteró documentos internos",
+            "Participar en una reunión para ocultar una falta sin haberla cometido",
+            "No utilizar la línea ética sabiendo que ocurrió un fraude",
+            "Aconsejar a otro no denunciar para “no meterse en problemas”"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Socios"
+          ]
+        },
+        {
+          "id": "denuncia_22",
+          "titulo": "22. Problemas de clima laboral, condiciones de trabajo o situaciones personales",
+          "descripcion": "Situaciones que afectan el desempeño o bienestar laboral de los colaboradores, ya sea por procesos mal diseñados, órdenes inadecuadas, ambiente de trabajo negativo o conflictos operativos. También incluye casos en los que un problema personal, familiar o de salud impacta visiblemente en el rendimiento del empleado.",
+          "ejemplos": [
+            "Instrucciones contradictorias que generan confusión y estrés",
+            "Un jefe que cambia objetivos constantemente sin aviso",
+            "Ambiente de gritos y discusiones frecuentes entre equipos",
+            "Baja de rendimiento por duelo familiar sin acompañamiento",
+            "Desmotivación por cargas excesivas sin reconocimiento"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados"
+          ]
+        },
+        {
+          "id": "denuncia_23",
+          "titulo": "23. Despido o terminación laboral injustificada",
+          "descripcion": "Separación del empleo sin causa válida, por represalias, errores ajenos o decisiones injustificadas o condiciones de liquidación o pago final no se apegan a lo establecido.",
+          "ejemplos": [
+            "Despedir a un empleado por negarse a participar en una irregularidad",
+            "Obligar a renunciar sin fundamento ni respaldo documental",
+            "Finalizar el contrato porque le cae mal al supervisor",
+            "No pagar la liquidación conforme a la ley",
+            "Entregar finiquito incompleto o fuera del tiempo legal"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Exempleados"
+          ]
+        },
+        {
+          "id": "denuncia_24",
+          "titulo": "24. Disputas o inconformidades laborales",
+          "descripcion": "Controversias inconformidades o problemas de salarios, horarios, jornada laboral, beneficios, prestaciones, permisos, incapacidades, vacaciones.",
+          "ejemplos": [
+            "Reclamo por pago incompleto de horas extras",
+            "Conflicto por cambio de horario sin previo aviso",
+            "Inconformidad con el rechazo injustificado de un permiso",
+            "Desacuerdo por descuentos aplicados sin explicación",
+            "Problemas por no recibir las vacaciones correspondientes"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados"
+          ]
+        }
+      ]
+    },
+    {
+      "categoria": "**4. SEGURIDAD, ENTORNO, MEDIO AMBIENTE, SALUD E HIGIENE**",
+      "descripcion": "Denuncias relacionadas con la integridad física y emocional de las personas, así como el cumplimiento de condiciones seguras y responsables en las operaciones. Abarca actos violentos, uso de sustancias prohibidas, sabotaje, malas condiciones de seguridad e higiene, falta de equipo adecuado, riesgos a la salud mental, afectaciones al medio ambiente o molestias a la comunidad.",
+      "items": [
+        {
+          "id": "denuncia_25",
+          "titulo": "25. Violencia, amenazas, sabotaje o daño intencional",
+          "descripcion": "Conductas violentas o amenazantes hacia personas, instalaciones o pertenencias de la compañía. Incluye actos físicos, intimidaciones, extorsiones, sabotaje u obstrucción intencional de operaciones.",
+          "ejemplos": [
+            "Un empleado amenazó con agredir físicamente a su jefe tras una discusión.",
+            "Se detectaron mensajes intimidatorios entre compañeros de trabajo.",
+            "Un colaborador rompió intencionalmente equipo de la empresa durante un desacuerdo.",
+            "Se reportó sabotaje en una línea de producción que provocó retrasos.",
+            "Un proveedor externo fue visto dañando propiedad de la compañía como represalia."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Publico en general"
+          ]
+        },
+        {
+          "id": "denuncia_26",
+          "titulo": "26. Consumo de sustancias prohibidas o indebidas",
+          "descripcion": "Consumo, posesión, distribución o llegada bajo los efectos de drogas ilegales, medicamentos controlados sin prescripción o alcohol, que afecten el desempeño o la seguridad en el trabajo.",
+          "ejemplos": [
+            "Un empleado llegó al trabajo bajo efectos del alcohol.",
+            "Se encontró marihuana en la mochila de un colaborador dentro de las instalaciones.",
+            "Un trabajador distribuye medicamentos controlados sin receta entre compañeros.",
+            "Se identificó consumo de drogas en el baño de personal.",
+            "Un conductor de la empresa operó maquinaria estando bajo efecto de sustancias."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados"
+          ]
+        },
+        {
+          "id": "denuncia_27",
+          "titulo": "27. Problemas de higiene y seguridad alimentaria",
+          "descripcion": "Manejo inadecuado de alimentos dentro de la organización que pueda poner en riesgo la salud de empleados o consumidores.",
+          "ejemplos": [
+            "El personal del comedor no usa guantes ni red para el cabello al manipular alimentos.",
+            "Se sirvieron alimentos en mal estado que provocaron malestar estomacal a varios empleados.",
+            "La refrigeración en el área de cocina no funcionaba desde hace días.",
+            "Se observó presencia de cucarachas en el área de preparación de alimentos.",
+            "No se respetaron los protocolos de higiene para el manejo de productos cárnicos."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados"
+          ]
+        },
+        {
+          "id": "denuncia_28",
+          "titulo": "28. Calidad e higiene de productos y servicios",
+          "descripcion": "Deficiencias en los bienes o servicios de la empresa que comprometan la salud, la seguridad o los estándares de calidad ofrecidos a clientes y usuarios.",
+          "ejemplos": [
+            "Un lote de productos salió con empaques contaminados.",
+            "Se entregó mercancía defectuosa que generó reclamos de clientes.",
+            "La línea de producción presenta residuos que podrían afectar la calidad.",
+            "Se ignoraron controles de limpieza en el área de empaque.",
+            "Un servicio técnico fue realizado sin cumplir estándares mínimos de seguridad."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Consumidor final"
+          ]
+        },
+        {
+          "id": "denuncia_29",
+          "titulo": "29. Salud mental y riesgo emocional",
+          "descripcion": "Situaciones donde la salud mental de una persona podría representar un riesgo para su bienestar o el de otros, dentro del entorno laboral.",
+          "ejemplos": [
+            "Un empleado manifestó pensamientos autodestructivos a su supervisor.",
+            "Un colaborador con crisis de ansiedad afectó el trabajo de su equipo.",
+            "Se reportó comportamiento errático y agresivo de un compañero.",
+            "Una persona expresó sentirse desbordada y sin apoyo emocional.",
+            "Se identificaron señales de depresión severa sin intervención de Recursos Humanos."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados"
+          ]
+        },
+        {
+          "id": "denuncia_30",
+          "titulo": "30. Acceso no autorizado o vulneración a sistemas o instalaciones",
+          "descripcion": "Ingreso o uso no autorizado de instalaciones físicas, redes, documentos o sistemas informáticos restringidos.",
+          "ejemplos": [
+            "Un exempleado ingresó a las oficinas sin permiso tras ser dado de baja.",
+            "Se detectó intento de acceso a documentos confidenciales sin autorización.",
+            "Un colaborador compartió su contraseña con personas no autorizadas.",
+            "Se usó una USB desconocida en una computadora restringida.",
+            "Un visitante sin pase accedió a un área de servidores sin supervisión."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos",
+            "Publico en general"
+          ]
+        },
+        {
+          "id": "denuncia_31",
+          "titulo": "31. Incumplimiento a normas de seguridad, salud e higiene",
+          "descripcion": "Falta de cumplimiento, carencias o ausencia de normas, condiciones o equipo que garanticen un entorno seguro, higiénico y saludable para los colaboradores y operaciones.",
+          "ejemplos": [
+            "Un operario no portaba casco ni equipo de seguridad en zona industrial.",
+            "Se ignoró una fuga de gas reportada por varios días.",
+            "El extintor estaba vencido y no funcionaba correctamente.",
+            "No se ofreció capacitación de seguridad a nuevos empleados.",
+            "Se permitieron labores en alturas sin protección ni supervisión adecuada."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos"
+          ]
+        },
+        {
+          "id": "denuncia_32",
+          "titulo": "32. Afectaciones al entorno, comunidad o medio ambiente",
+          "descripcion": "Acciones u omisiones por parte de la empresa o su personal que generan molestias, daños o riesgos para la comunidad, vecinos, entorno natural o espacios públicos. Incluye contaminación, emisiones, ruidos, derrames, mal manejo de residuos, uso excesivo de recursos o cualquier otro impacto ambiental o social negativo.",
+          "ejemplos": [
+            "El ruido de las operaciones durante la noche afecta a vecinos cercanos.",
+            "Se bloqueó el paso a una calle sin aviso a la comunidad.",
+            "Un derrame en las instalaciones contaminó la acera pública.",
+            "Quejas por malos olores emitidos por el área de residuos.",
+            "El uso de maquinaria pesada genera vibraciones molestas en viviendas cercanas."
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Publico en general"
+          ]
+        }
+      ]
+    },
+    {
+      "categoria": "**5. APROPIACIÓN Y USO INDEBIDO DE LOS RECURSOS, TIEMPOS Y ACTIVOS**",
+      "descripcion": "Reportes sobre el uso, abuso, mal manejo o apropiación de recursos de la empresa para fines no autorizados o personales. Incluye robo, sustracción de bienes, uso indebido de instalaciones, mal uso del tiempo laboral, compras innecesarias o en perjuicio de la organización, y cualquier otra forma de aprovechamiento no ético de los activos de la compañía.",
+      "items": [
+        {
+          "id": "denuncia_33",
+          "titulo": "33. Robo o apropiación indebida de bienes o recursos",
+          "descripcion": "Sustracción, apropiación o retención de recursos, dinero, bienes o activos de la compañía, compañeros de trabajo o terceros,  sin autorización o con intención de beneficiarse personal o indebidamente.",
+          "ejemplos": [
+            "Robar dinero de la caja registradora",
+            "Sustraer productos del almacén sin autorización",
+            "Tomar objetos personales de un compañero sin su consentimiento",
+            "Llevarse herramientas de la empresa ocultándolas al final de la jornada",
+            "Robarse materias primas de la fabrica"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos"
+          ]
+        },
+        {
+          "id": "denuncia_34",
+          "titulo": "34. Abuso de confianza, uso o disposición indebida de recursos, instalaciones o personal",
+          "descripcion": "Uso, asignación o disposición de recursos, información, instalaciones, personal o herramientas de la compañía para fines personales o sin la debida autorización. Incluye dar acceso no autorizado, usar activos de forma incorrecta o fuera de sus fines laborales.",
+          "ejemplos": [
+            "Usar materiales de la empresa para uso personal",
+            "Asignar personal de la empresa para tareas personales del jefe",
+            "Utilizar vehículos de la empresa para actividades no laborales",
+            "Usar información interna para apoyar negocios propios",
+            "Usar  recursos técnicos o licencias de software corporativas a terceros sin permiso"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores",
+            "Clientes estratégicos"
+          ]
+        },
+        {
+          "id": "denuncia_35",
+          "titulo": "35. Abuso del tiempo laboral o actividades no relacionadas con el trabajo",
+          "descripcion": "Realizar actividades personales, recreativas o improductivas durante la jornada laboral que afecten el cumplimiento de responsabilidades o interfieran con los objetivos de la empresa.",
+          "ejemplos": [
+            "Pasar horas en redes sociales personales durante el trabajo",
+            "Salir constantemente de las instalaciones sin justificación laboral",
+            "Realizar ventas de productos propios en horario de oficina",
+            "Ver series o películas en el equipo de la empresa durante la jornada",
+            "Jugar videojuegos en el celular durante reuniones o labores"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados"
+          ]
+        },
+        {
+          "id": "denuncia_36",
+          "titulo": "36. Compras indebidas, innecesarias o en perjuicio de la compañía",
+          "descripcion": "Adquisición de productos o servicios que no cumplen con los criterios de necesidad, calidad, precio o beneficio esperado para la compañía, generando perjuicio financiero o desperdicio de recursos.",
+          "ejemplos": [
+            "Comprar insumos en exceso que terminan caducando",
+            "Adquirir equipo a sobreprecio con proveedores sin competencia",
+            "Solicitar viáticos para viajes innecesarios o mal justificados",
+            "Comprar materiales de baja calidad que deben ser reemplazados",
+            "Hacer compras personales con facturas a nombre de la empresa"
+          ],
+          "preguntaAdicional": "",
+          "reportantesRecomendados": [
+            "Empleados",
+            "Proveedores"
+          ]
+        }
+      ]
+    }
+  ],
+  "preguntas": [
+    {
+      "titulo": "1. ÉTICA Y CUMPLIMIENTO GENERAL",
+      "descripcion": "Preguntas sobre principios éticos, buenas prácticas, códigos de conducta o interpretación de valores organizacionales en la toma de decisiones.",
+      "id": "pregunta_01"
+    },
+    {
+      "titulo": "2. CUMPLIMIENTO LEGAL Y NORMATIVO",
+      "descripcion": "Dudas sobre el cumplimiento de leyes, regulaciones externas o políticas internas aplicables al entorno laboral o sector en el que opera la organización.",
+      "id": "pregunta_02"
+    },
+    {
+      "titulo": "3. CONFLICTOS DE INTERÉS",
+      "descripcion": "Orientación sobre posibles situaciones donde los intereses personales, familiares o externos puedan interferir o percibirse como interferencia con los intereses de la empresa.",
+      "id": "pregunta_03"
+    },
+    {
+      "titulo": "4. PRIVACIDAD, INFORMACIÓN CONFIDENCIAL Y USO DE DATOS",
+      "descripcion": "Preguntas sobre el manejo ético de información sensible, confidencial, datos personales o información privilegiada dentro de la organización.",
+      "id": "pregunta_04"
+    },
+    {
+      "titulo": "5. USO DE RECURSOS Y ACTIVOS DE LA EMPRESA",
+      "descripcion": "Consultas sobre el uso apropiado de instalaciones, herramientas, presupuestos, vehículos, tecnología o cualquier otro recurso asignado por la compañía.",
+      "id": "pregunta_05"
+    },
+    {
+      "titulo": "6. RELACIONES CON TERCEROS (PROVEEDORES, CLIENTES, ACREEDORES)",
+      "descripcion": "Asesoría sobre cómo interactuar éticamente con terceros externos a la compañía, evitando favoritismos, conflictos, sobornos o prácticas desleales.",
+      "id": "pregunta_06"
+    },
+    {
+      "titulo": "7. NO COMPLICIDAD Y OBLIGACIÓN DE REPORTAR",
+      "descripcion": "Dudas sobre la responsabilidad de actuar frente a actos indebidos de los que se es testigo o se tiene conocimiento, y la obligación de reportarlos.",
+      "id": "pregunta_07"
+    },
+    {
+      "titulo": "8. POLÍTICAS ANTICORRUPCIÓN, ANTISOBORNO Y ANTITRUST",
+      "descripcion": "Consultas sobre cómo evitar prácticas de colusión, competencia desleal, manipulación de mercados, monopolio, soborno u otras formas de corrupción.",
+      "id": "pregunta_08"
+    },
+    {
+      "titulo": "9. DIVERSIDAD, INCLUSIÓN Y NO DISCRIMINACIÓN",
+      "descripcion": "Preguntas sobre cómo asegurar un trato justo, respetuoso e incluyente para todas las personas, sin importar su origen, género, edad, orientación o condición.",
+      "id": "pregunta_09"
+    },
+    {
+      "titulo": "10. PREVENCIÓN DE REPRESALIAS",
+      "descripcion": "Dudas sobre cómo actuar si se teme recibir represalias por reportar una situación, rechazar una conducta indebida o colaborar en una investigación.",
+      "id": "pregunta_10"
+    },
+    {
+      "titulo": "11. POLÍTICAS DE CALIDAD Y PROFESIONALISMO",
+      "descripcion": "Consultas sobre cómo cumplir con los estándares de calidad, desempeño y conducta profesional esperada en la ejecución de tareas o proyectos.",
+      "id": "pregunta_11"
+    },
+    {
+      "titulo": "12. CUIDADO DEL MEDIO AMBIENTE Y SOSTENIBILIDAD",
+      "descripcion": "Consultas sobre prácticas responsables con el entorno, uso eficiente de recursos naturales, reducción de residuos, cumplimiento ambiental y acciones para contribuir a la sostenibilidad.",
+      "id": "pregunta_12"
+    }
+  ],
+  "sugerencias": [
+      {
+      "titulo": "1. PROCESOS INTERNOS Y EFICIENCIA OPERATIVA",
+      "descripcion": "Sugerencias para optimizar los procesos, reducir tiempos o esfuerzos innecesarios, eliminar retrabajos o mejorar la forma en que se hacen las cosas dentro del área o entre departamentos.",
+      "id": "sugerencia_01"
+    },
+    {
+      "titulo": "2. PRODUCTIVIDAD Y REDUCCIÓN DE COSTOS",
+      "descripcion": "Ideas que ayuden a lograr más con menos, hacer un mejor uso de los recursos existentes, reducir desperdicios o disminuir gastos innecesarios sin afectar la calidad.",
+      "id": "sugerencia_02"
+    },
+    {
+      "titulo": "3. INNOVACIÓN Y MEJORAS TECNOLÓGICAS",
+      "descripcion": "Propuestas creativas, soluciones nuevas o uso de tecnología que permita hacer las cosas de forma más moderna, eficiente o competitiva.",
+      "id": "sugerencia_03"
+    },
+    {
+      "titulo": "4. SEGURIDAD Y SALUD EN EL TRABAJO",
+      "descripcion": "Sugerencias para mejorar las condiciones de seguridad laboral, prevenir accidentes, cuidar la salud física y mental del personal o promover una cultura de prevención de riesgos.",
+      "id": "sugerencia_04"
+    },
+    {
+      "titulo": "5. CLIMA LABORAL Y CULTURA ORGANIZACIONAL",
+      "descripcion": "Propuestas para fomentar un ambiente de respeto, colaboración, inclusión y pertenencia, o para resolver tensiones que afectan el trabajo en equipo.",
+      "id": "sugerencia_05"
+    },
+    {
+      "titulo": "6. IMPACTO AMBIENTAL Y SOSTENIBILIDAD",
+      "descripcion": "Ideas para reducir el impacto ambiental de la empresa, mejorar la gestión de residuos, consumo de energía o fomentar prácticas sostenibles dentro y fuera del trabajo.",
+      "id": "sugerencia_06"
+    },
+    {
+      "titulo": "7. CRECIMIENTO COMERCIAL Y MEJORA EN VENTAS",
+      "descripcion": "Sugerencias sobre cómo atraer más clientes, mejorar el servicio, abrir nuevos mercados, ofrecer nuevos productos o fortalecer la relación con los usuarios actuales.",
+      "id": "sugerencia_07"
+    }
+  ]
+}

@@ -1,10 +1,23 @@
 import { useEffect, useState } from 'react';
-import catalogos from './catalogo_completo_integrado.json';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Plus } from 'lucide-react';
 
 function Preguntas() {
   const [preguntasBD, setPreguntasBD] = useState([]);
   const [preguntasEditables, setPreguntasEditables] = useState([]);
+  const [catalogoBase, setCatalogoBase] = useState({ preguntas: [] });
+
+  useEffect(() => {
+    fetch("/catalogo_completo_integrado.json")
+      .then((res) => {
+        if (!res.ok) throw new Error("No se pudo cargar el catálogo");
+        return res.json();
+      })
+      .then((data) => setCatalogoBase({ preguntas: data.preguntas }))
+      .catch((err) => {
+        console.error("Error al cargar catálogo:", err);
+        setCatalogoBase({ preguntas: [] });
+      });
+  }, []);
 
   useEffect(() => {
     fetch('http://localhost:8000/preguntas')
@@ -87,14 +100,21 @@ function Preguntas() {
         Puedes editar o agregar múltiples preguntas desde el catálogo.
       </p>
 
+      {/* Botones visual tipo Denuncias */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {catalogos.preguntas.map((p) => (
+        {catalogoBase.preguntas.map((p) => (
           <button
             key={p.id}
-            className="bg-blue-100 hover:bg-blue-200 text-sm px-3 py-1 rounded"
+            className="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold px-2 py-1 rounded shadow flex items-center gap-1 transition-colors"
             onClick={() => agregarPregunta(p)}
+            style={{
+              whiteSpace: "pre",
+              minWidth: "80px",
+              maxWidth: "100%",
+            }}
           >
-            {p.titulo}
+            <Plus className="h-3.5 w-3.5" />
+            <span>{p.titulo}</span>
           </button>
         ))}
       </div>
