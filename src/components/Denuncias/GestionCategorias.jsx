@@ -1,157 +1,203 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+// GestionCategorias.jsx adaptado a multitenant y corregido
+import { useState, useEffect } from 'react';
+import { Pencil, Trash2, Save, X } from 'lucide-react';
 
-function GestionCategorias() {
-  const [nuevas, setNuevas] = useState({ titulo: "", descripcion: "" });
-  const [categorias, setCategorias] = useState([]);
+function GestionCategorias({ categoriasBD, setCategoriasBD }) {
+  const [modoAgregar, setModoAgregar] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
+  const [form, setForm] = useState({ titulo: '', descripcion: '', orden: null });
 
-  const cargarCategorias = () => {
-    axios
-      .get("http://localhost:8000/categorias-denuncia")
-      .then((res) => setCategorias(res.data))
-      .catch((err) => console.error("Error al obtener categorías:", err));
-  };
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+  const organizacion_id = usuario.organizacion_id;
 
-  useEffect(() => {
-    cargarCategorias();
-  }, []);
 
   const guardarCategoria = () => {
-    if (!nuevas.titulo.trim()) return;
 
-    axios
-      .post("http://localhost:8000/categorias-denuncia", {
-        ...nuevas,
-        cliente_id: 1,
-        orden: categorias.length,
-      })
-      .then(() => {
-        setNuevas({ titulo: "", descripcion: "" });
-        cargarCategorias();
-      });
-  };
+    if (!form.titulo.trim()) {
+      alert("El título no puede estar vacío.");
+      return;
+    }
 
-  const guardarEdicion = (id) => {
-    const actual = categorias.find((c) => c.id === id);
-    axios
-      .put(`http://localhost:8000/categorias-denuncia/${id}`, {
-        ...actual,
-        cliente_id: 1,
+    const metodo = editandoId ? 'PUT' : 'POST';
+    const url = editandoId
+      ? `http://localhost:8000/categorias-denuncia/${editandoId}`
+      : 'http://localhost:8000/categorias-denuncia';
+
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+    const organizacion_id = usuario.organizacion_id;
+
+    if (!organizacion_id) {
+      console.error("❌ organizacion_id inválido:", organizacion_id);
+      alert("Error: organizacion_id inválido");
+      return;
+    }
+
+    const payload = {
+      organizacion_id: Number(organizacion_id),
+      titulo: form.titulo.trim(),
+      descripcion: form.descripcion?.trim() || "",
+      orden: Number.isInteger(form.orden) ? form.orden : null
+    };
+
+
+    fetch(url, {
+      method: metodo,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Organizacion-ID': organizacion_id
+      },
+      body: JSON.stringify(payload),
+    })
+      .then(async (res) => {
+        const texto = await res.text();
+        if (!res.ok) {
+          console.error("❌ Error detallado desde backend:", texto);
+          throw new Error(texto);
+        }
+        return JSON.parse(texto);
       })
-      .then(() => {
+      .then((data) => {
+        console.log("✅ Categoría guardada con éxito:", data);
         setEditandoId(null);
-        cargarCategorias();
+        setForm({ titulo: '', descripcion: '', orden: null });
+        setModoAgregar(false);
+
+        return fetch("http://localhost:8000/categorias-denuncia", {
+          headers: {
+            "X-Organizacion-ID": organizacion_id
+          }
+        });
+      })
+      .then((res) => res.json())
+      .then((nuevasCategorias) => {
+        setCategoriasBD(nuevasCategorias);
+      })
+      .catch((error) => {
+        console.error("🚨 Error en guardarCategoria:", error);
+        alert("Hubo un error al guardar la categoría.");
       });
   };
 
   const eliminarCategoria = (id) => {
-    if (!confirm("¿Seguro que deseas eliminar esta categoría?")) return;
-    axios.delete(`http://localhost:8000/categorias-denuncia/${id}`).then(() => cargarCategorias());
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta categoría?")) return;
+
+    fetch(`http://localhost:8000/categorias-denuncia/${id}`, {
+      method: 'DELETE',
+      headers: {
+        "X-Organizacion-ID": organizacion_id
+      }
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al eliminar");
+        return fetch("http://localhost:8000/categorias-denuncia", {
+          headers: { "X-Organizacion-ID": organizacion_id }
+        });
+      })
+      .then((res) => res.json())
+      .then((data) => setCategoriasBD(data))
+      .catch((err) => {
+        console.error("❌ Error al eliminar categoría:", err);
+        alert("Ocurrió un error al eliminar la categoría.");
+      });
   };
 
   return (
-    <div className="mb-10 max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-3xl font-extrabold mb-4 text-gray-800 tracking-tight">Categorías de Denuncia</h2>
-      <hr className="mb-6 border-gray-300" />
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Gestión de Categorías de Denuncia</h1>
 
-      <div className="mb-8 space-y-3">
-        <p className="font-semibold text-lg text-gray-700">Agregar nueva categoría</p>
-        <Input
-          placeholder="Título"
-          value={nuevas.titulo}
-          onChange={(e) => setNuevas((prev) => ({ ...prev, titulo: e.target.value }))}
-          className="rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
-        />
-        <Textarea
-          placeholder="Descripción"
-          value={nuevas.descripcion}
-          onChange={(e) => setNuevas((prev) => ({ ...prev, descripcion: e.target.value }))}
-          className="rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
-          rows={3}
-        />
+      {!modoAgregar && (
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-6"
           onClick={() => setModoAgregar(true)}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={3}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Agregar nueva categoría de denuncia
+          Agregar categoría
         </button>
-      </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {categorias.map((cat) => (
-          <div
-            key={cat.id}
-            className="p-5 border border-gray-300 rounded-lg shadow-sm bg-gray-50 relative hover:shadow-md transition-shadow"
-          >
-            {editandoId === cat.id ? (
-              <>
-                <Input
-                  className="mb-3 rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
-                  value={cat.titulo}
-                  onChange={(e) =>
-                    setCategorias((prev) =>
-                      prev.map((c) => (c.id === cat.id ? { ...c, titulo: e.target.value } : c))
-                    )
-                  }
-                />
-                <Textarea
-                  className="mb-4 rounded-md border-gray-300 focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  value={cat.descripcion}
-                  onChange={(e) =>
-                    setCategorias((prev) =>
-                      prev.map((c) => (c.id === cat.id ? { ...c, descripcion: e.target.value } : c))
-                    )
-                  }
-                />
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setEditandoId(null)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={() => guardarEdicion(cat.id)}>Guardar</Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-lg font-semibold text-blue-800 mb-2">
-                  {categorias.indexOf(cat) + 1}. {cat.titulo}
-                </p>
-                <p className="text-gray-600 whitespace-pre-wrap mb-4">{cat.descripcion}</p>
-                <div className="absolute top-3 right-3 flex gap-3">
-                  <button
-                    onClick={() => setEditandoId(cat.id)}
-                    className="text-blue-600 hover:text-blue-800 transition-colors"
-                    aria-label="Editar categoría"
-                    title="Editar categoría"
-                  >
-                    <Pencil size={20} />
-                  </button>
-                  <button
-                    onClick={() => eliminarCategoria(cat.id)}
-                    className="text-red-600 hover:text-red-800 transition-colors"
-                    aria-label="Eliminar categoría"
-                    title="Eliminar categoría"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                </div>
-              </>
-            )}
+      {(modoAgregar || editandoId) && (
+        <div className="mb-6 p-4 border rounded bg-gray-50">
+          <h3 className="text-lg font-semibold mb-3">
+            {editandoId ? 'Editar categoría' : 'Agregar categoría'}
+          </h3>
+          <input
+            type="text"
+            placeholder="Título"
+            value={form.titulo}
+            onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+            className="w-full mb-3 p-2 border rounded"
+          />
+          <textarea
+            placeholder="Descripción"
+            value={form.descripcion}
+            onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
+            className="w-full mb-3 p-2 border rounded"
+          />
+          <input
+            type="number"
+            placeholder="Orden"
+            value={form.orden ?? ''}
+            onChange={(e) => {
+              const valor = e.target.value;
+              setForm({ ...form, orden: valor === "" ? null : parseInt(valor) });
+            }}
+            className="w-full mb-4 p-2 border rounded"
+          />
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                console.log("🟢 Click detectado en botón Guardar");
+                guardarCategoria();
+              }}
+              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            >
+              <Save size={16} className="inline mr-1" /> Guardar
+            </button>
+
+            <button
+              onClick={() => {
+                setForm({ titulo: '', descripcion: '', orden: null });
+                setEditandoId(null);
+                setModoAgregar(false);
+              }}
+              className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+            >
+              <X size={16} className="inline mr-1" /> Cancelar
+            </button>
+          </div>
+        </div> // 🔴 ESTE DIV FALTABA CERRAR
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {categoriasBD.map((cat) => (
+          <div key={cat.id} className="p-4 border rounded bg-white shadow-sm flex justify-between items-start">
+            <div>
+              <p className="font-semibold text-blue-800">{cat.titulo}</p>
+              <p className="text-sm text-gray-600">{cat.descripcion}</p>
+              <p className="text-xs text-gray-400">Orden: {cat.orden ?? '—'}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="text-blue-600"
+                onClick={() => {
+                  setEditandoId(cat.id);
+                  setForm({
+                    titulo: cat.titulo,
+                    descripcion: cat.descripcion || '',
+                    orden: cat.orden ?? null
+                  });
+                  setModoAgregar(true);
+                }}
+              >
+                <Pencil size={16} />
+              </button>
+              <button
+                className="text-red-600"
+                onClick={() => eliminarCategoria(cat.id)}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
         ))}
       </div>

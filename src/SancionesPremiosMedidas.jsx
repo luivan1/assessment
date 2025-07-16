@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Pencil, Save, Trash2 } from "lucide-react";
+import ConfiguradorBanderas from './components/ConfiguradorBanderas';
 
 const categorias = [
   {
@@ -45,11 +46,15 @@ const categorias = [
 function SancionesPremiosMedidas() {
   const [items, setItems] = useState([]);
   const [modoEdicion, setModoEdicion] = useState(null);
-  const clienteId = 1;
+
+  const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+  const ORGANIZACION_ID = usuario.organizacion_id || null;
 
   const fetchItems = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/cierres");
+      const res = await axios.get("http://localhost:8000/cierres", {
+        headers: { "X-Organizacion-ID": ORGANIZACION_ID }
+      });
       setItems(res.data.map(item => ({
         ...item,
         original: item.etiqueta_original || null
@@ -65,14 +70,16 @@ function SancionesPremiosMedidas() {
 
   const agregar = async (categoria, texto) => {
     const nuevo = {
-      cliente_id: clienteId,
       categoria,
       etiqueta: texto,
       etiqueta_original: texto,
-      visible_en_reporte: true
+      visible_en_reporte: true,
+      organizacion_id: ORGANIZACION_ID
     };
     try {
-      const res = await axios.post("http://localhost:8000/cierres", nuevo);
+      const res = await axios.post("http://localhost:8000/cierres", nuevo, {
+        headers: { "X-Organizacion-ID": ORGANIZACION_ID }
+      });
       setItems(prev => [...prev, { ...res.data, original: texto }]);
     } catch (err) {
       console.error("Error al agregar cierre:", err);
@@ -81,7 +88,9 @@ function SancionesPremiosMedidas() {
 
   const actualizar = async (item) => {
     try {
-      const res = await axios.put(`http://localhost:8000/cierres/${item.id}`, item);
+      const res = await axios.put(`http://localhost:8000/cierres/${item.id}`, item, {
+        headers: { "X-Organizacion-ID": ORGANIZACION_ID }
+      });
       setItems(prev => prev.map(i => i.id === item.id ? { ...res.data, original: i.original } : i));
       setModoEdicion(null);
     } catch (err) {
@@ -91,7 +100,9 @@ function SancionesPremiosMedidas() {
 
   const eliminar = async (id) => {
     try {
-      await axios.delete(`http://localhost:8000/cierres/${id}`);
+      await axios.delete(`http://localhost:8000/cierres/${id}`, {
+        headers: { "X-Organizacion-ID": ORGANIZACION_ID }
+      });
       setItems(prev => prev.filter(i => i.id !== id));
     } catch (err) {
       console.error("Error al eliminar cierre:", err);
@@ -105,6 +116,8 @@ function SancionesPremiosMedidas() {
         Selecciona las acciones que implementarás como parte de la gestión de tu Línea Ética. Puedes agregar un mismo elemento más de una vez y editar su etiqueta. Esto nos ayuda a analizar el impacto de cada acción y fomentar la mejora continua.<br /><br />
         ⚠️ Importante: No cambies el tipo de acción (por ejemplo, no conviertas una sanción en premio), ya que esto altera el seguimiento y la evaluación de resultados.
       </p>
+        {/* Aquí se insertan las Banderas */}
+        <ConfiguradorBanderas />
 
       {categorias.map((cat, i) => (
         <div key={i} className="mb-10">
@@ -130,7 +143,13 @@ function SancionesPremiosMedidas() {
                     <>
                       <input
                         value={el.etiqueta}
-                        onChange={e => setItems(prev => prev.map(i => i.id === el.id ? { ...i, etiqueta: e.target.value } : i))}
+                        onChange={e =>
+                          setItems(prev =>
+                            prev.map(i =>
+                              i.id === el.id ? { ...i, etiqueta: e.target.value } : i
+                            )
+                          )
+                        }
                         className="border p-2 w-full mb-2"
                       />
                       <div className="flex gap-2 mt-2">

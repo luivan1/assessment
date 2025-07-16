@@ -93,7 +93,7 @@ export default function MainApp({ usuario, onLogout }) {
           Sugerencias
         </button>
         <button onClick={() => setTab('cierres')} className={tab === 'cierres' ? 'bg-blue-600 text-white px-3 py-1 rounded' : 'bg-gray-200 px-3 py-1 rounded'}>
-          Catálogo de Cierres
+          Catálogos
         </button>
         <button onClick={() => setTab('difusion')} className={tab === 'difusion' ? 'bg-blue-600 text-white px-3 py-1 rounded' : 'bg-gray-200 px-3 py-1 rounded'}>
           Medios de Difusión

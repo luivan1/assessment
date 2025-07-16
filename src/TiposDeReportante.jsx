@@ -21,9 +21,11 @@ const camposIdentidad = [
 ];
 
 function TiposDeReportante() {
+  const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
   const [tipos, setTipos] = useState([]);
   const [modoEdicion, setModoEdicion] = useState(null);
   const ultimoAgregadoRef = useRef(null);
+
 
   useEffect(() => {
     cargarDesdeBackend();
@@ -38,7 +40,8 @@ function TiposDeReportante() {
 
   const cargarDesdeBackend = async () => {
     try {
-      const res = await fetch("http://localhost:8000/reportantes");
+      const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+      const res = await fetch(`http://localhost:8000/reportantes?organizacion_id=${usuario.organizacion_id || ""}`);
       const datos = await res.json();
       const transformados = datos.map((item) => ({
         ...item,
@@ -58,7 +61,7 @@ function TiposDeReportante() {
       etiqueta_original: texto,
       anonimo: true,
       campos: [],
-      cliente_id: 1,
+      cliente_id: usuario.cliente_id || null,
       orden: tipos.length,
       esNuevo: true
     };
@@ -94,8 +97,10 @@ function TiposDeReportante() {
   };
 
   const guardar = async (tipo) => {
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
     const payload = {
-      cliente_id: 1,
+      cliente_id: usuario.cliente_id || null,
+      organizacion_id: usuario.organizacion_id || null,
       tipo_base: tipo.tipo_base,
       etiqueta: tipo.etiqueta,
       anonimo: tipo.anonimo,

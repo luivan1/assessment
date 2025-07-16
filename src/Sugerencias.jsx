@@ -6,6 +6,9 @@ function Sugerencias() {
   const [sugerenciasEditables, setSugerenciasEditables] = useState([]);
   const [catalogoBase, setCatalogoBase] = useState({ sugerencias: [] });
 
+  const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+  const ORGANIZACION_ID = usuario.organizacion_id || null;
+
   useEffect(() => {
     fetch("/catalogo_completo_integrado.json")
       .then((res) => {
@@ -20,11 +23,15 @@ function Sugerencias() {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:8000/sugerencias')
+    fetch('http://localhost:8000/sugerencias', {
+      headers: {
+        "X-Organizacion-ID": ORGANIZACION_ID
+      }
+    })
       .then(res => res.json())
       .then(data => setSugerenciasBD(data))
       .catch(() => setSugerenciasBD([]));
-  }, []);
+  }, [ORGANIZACION_ID]);
 
   useEffect(() => {
     const editables = sugerenciasBD.map(s => ({
@@ -37,18 +44,25 @@ function Sugerencias() {
 
   const agregarSugerencia = (itemBase) => {
     const nueva = {
-      cliente_id: 1,
       titulo: itemBase.titulo,
       descripcion: itemBase.descripcion,
       titulo_original: itemBase.titulo,
+      organizacion_id: ORGANIZACION_ID
     };
 
     fetch('http://localhost:8000/sugerencias', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Organizacion-ID': ORGANIZACION_ID
+      },
       body: JSON.stringify(nueva)
     })
-      .then(() => fetch('http://localhost:8000/sugerencias'))
+      .then(() =>
+        fetch('http://localhost:8000/sugerencias', {
+          headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
+        })
+      )
       .then(res => res.json())
       .then(data => setSugerenciasBD(data));
   };
@@ -64,17 +78,26 @@ function Sugerencias() {
     const sugerencia = sugerenciasEditables.find(s => s.id === id);
     fetch(`http://localhost:8000/sugerencias/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Organizacion-ID': ORGANIZACION_ID
+      },
       body: JSON.stringify(sugerencia)
     })
-      .then(() => fetch('http://localhost:8000/sugerencias'))
+      .then(() =>
+        fetch('http://localhost:8000/sugerencias', {
+          headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
+        })
+      )
       .then(res => res.json())
       .then(data => setSugerenciasBD(data));
   };
 
   const editarSugerencia = (id, cancelar = false) => {
     if (cancelar) {
-      fetch('http://localhost:8000/sugerencias')
+      fetch('http://localhost:8000/sugerencias', {
+        headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
+      })
         .then(res => res.json())
         .then(data => setSugerenciasBD(data));
     } else {
@@ -86,9 +109,14 @@ function Sugerencias() {
 
   const eliminarSugerencia = (id) => {
     fetch(`http://localhost:8000/sugerencias/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
     })
-      .then(() => fetch('http://localhost:8000/sugerencias'))
+      .then(() =>
+        fetch('http://localhost:8000/sugerencias', {
+          headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
+        })
+      )
       .then(res => res.json())
       .then(data => setSugerenciasBD(data));
   };
@@ -100,7 +128,6 @@ function Sugerencias() {
         Puedes editar o agregar múltiples sugerencias desde el catálogo.
       </p>
 
-      {/* Botones de catálogo visual pro */}
       <div className="flex flex-wrap gap-2 mb-4">
         {catalogoBase.sugerencias.map((s) => (
           <button

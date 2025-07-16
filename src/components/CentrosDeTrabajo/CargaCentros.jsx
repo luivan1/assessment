@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-function CargaCentros() {
+function CargaCentros({ filtrosActualizados }) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [centros, setCentros] = useState([]);
   const [formulario, setFormulario] = useState({});
@@ -11,6 +11,8 @@ function CargaCentros() {
   const [ciudadesDisponibles, setCiudadesDisponibles] = useState([]);
   const [filtrosPersonalizados, setFiltrosPersonalizados] = useState([]);
 
+  const organizacion_id = JSON.parse(localStorage.getItem('usuario'))?.organizacion_id;
+
   useEffect(() => {
     fetch('/ubicaciones.json')
       .then(res => res.json())
@@ -18,18 +20,38 @@ function CargaCentros() {
         const ordenadas = [...data].sort((a, b) => a.name.localeCompare(b.name));
         setUbicaciones(ordenadas);
       });
-
-    fetch('http://localhost:8000/filtros')
-      .then(res => res.json())
-      .then(data => setFiltrosPersonalizados(data))
-      .catch(err => console.error('Error cargando filtros personalizados:', err));
-
-    cargarCentrosDesdeBackend();
   }, []);
+
+  const cargarFiltros = async () => {
+    try {
+      const resFiltros = await fetch(`http://localhost:8000/filtros?organizacion_id=${organizacion_id}`);
+      const filtros = await resFiltros.json();
+      setFiltrosPersonalizados(filtros || []);
+    } catch (err) {
+      console.error("❌ Error al cargar filtros:", err);
+    }
+  };
+
+  useEffect(() => {
+    const cargarDatos = async () => {
+      await cargarFiltros();
+      await cargarCentrosDesdeBackend();
+    };
+
+    if (organizacion_id) {
+      cargarDatos();
+    }
+  }, [organizacion_id]);
+
+  useEffect(() => {
+    if (organizacion_id) {
+      cargarFiltros();
+    }
+  }, [filtrosActualizados]);
 
   const cargarCentrosDesdeBackend = async () => {
     try {
-      const res = await fetch('http://localhost:8000/centros');
+      const res = await fetch(`http://localhost:8000/centros?organizacion_id=${organizacion_id}`);
       const data = await res.json();
       setCentros(data);
     } catch (err) {
@@ -38,29 +60,37 @@ function CargaCentros() {
   };
 
   useEffect(() => {
-    const pais = ubicaciones.find(p => p.name === formulario.pais);
-    const estados = pais?.states || [];
+    const paisSeleccionado = ubicaciones.find(p => p.name === formulario.pais);
+    const estados = paisSeleccionado?.states || [];
     setEstadosDisponibles(estados.sort((a, b) => a.name.localeCompare(b.name)));
     setCiudadesDisponibles([]);
     setFormulario(prev => ({ ...prev, estado: '', ciudad: '' }));
   }, [formulario.pais]);
 
   useEffect(() => {
-    const pais = ubicaciones.find(p => p.name === formulario.pais);
-    const estado = pais?.states.find(e => e.name === formulario.estado);
-    const ciudades = estado?.cities || [];
+    const paisSeleccionado = ubicaciones.find(p => p.name === formulario.pais);
+    const estadoSeleccionado = paisSeleccionado?.states.find(e => e.name === formulario.estado);
+    const ciudades = estadoSeleccionado?.cities || [];
     setCiudadesDisponibles(ciudades.sort((a, b) => a.name.localeCompare(b.name)));
     setFormulario(prev => ({ ...prev, ciudad: '' }));
   }, [formulario.estado]);
 
-  const manejarCambio = (campo, valor) => {
-    setFormulario({ ...formulario, [campo]: valor });
-  };
-
   const guardarCentro = async () => {
+    if (!organizacion_id) return;
+
     const {
       nombre, pais, estado, ciudad, direccion, cp, telefono, id, ...otrosCampos
     } = formulario;
+
+    // ✅ Validación de campos obligatorios
+    if (!nombre || !pais || !estado) {
+      alert('Por favor completa todos los campos obligatorios: nombre, país y estado.');
+      return;
+    }
+
+    const filtros = Object.fromEntries(
+      Object.entries(otrosCampos).filter(([k, v]) => typeof v === 'string' && v.trim() !== '')
+    );
 
     const datosEnviar = {
       nombre,
@@ -70,7 +100,8 @@ function CargaCentros() {
       direccion,
       cp,
       telefono,
-      filtros_personalizados: otrosCampos
+      filtros_personalizados: filtros,
+      organizacion_id
     };
 
     try {
@@ -89,9 +120,10 @@ function CargaCentros() {
         setFormulario({});
         setModoEdicion(null);
         setMostrarFormulario(false);
-        cargarCentrosDesdeBackend();
+        await cargarCentrosDesdeBackend();
       } else {
-        console.error("Error al guardar centro");
+        const errorTexto = await respuesta.text();
+        console.error("❌ Error del backend:", errorTexto);
       }
     } catch (error) {
       console.error("Error de red al guardar centro:", error);
@@ -112,13 +144,17 @@ function CargaCentros() {
         method: 'DELETE'
       });
       if (res.ok) {
-        cargarCentrosDesdeBackend();
+        await cargarCentrosDesdeBackend();
       } else {
         console.error('Error eliminando centro');
       }
     } catch (error) {
       console.error('Error de red al eliminar centro:', error);
     }
+  };
+
+  const manejarCambio = (campo, valor) => {
+    setFormulario(prev => ({ ...prev, [campo]: valor }));
   };
 
   return (
@@ -160,7 +196,7 @@ function CargaCentros() {
           <input placeholder="Código Postal" value={formulario.cp || ''} onChange={(e) => manejarCambio('cp', e.target.value)} className="border p-2" />
           <input placeholder="Teléfono" value={formulario.telefono || ''} onChange={(e) => manejarCambio('telefono', e.target.value)} className="border p-2" />
 
-          {filtrosPersonalizados.map(filtro => (
+          {(filtrosPersonalizados || []).map(filtro => (
             <div key={filtro.id} className="col-span-2 md:col-span-1">
               <label className="block text-sm font-semibold mb-1">{filtro.nombre}</label>
               <select
@@ -169,7 +205,7 @@ function CargaCentros() {
                 className="border p-2 w-full"
               >
                 <option value="">Selecciona {filtro.nombre}</option>
-                {filtro.valores.map(v => (
+                {(filtro.valores || []).map(v => (
                   <option key={v} value={v}>{v}</option>
                 ))}
               </select>
@@ -196,7 +232,7 @@ function CargaCentros() {
                 </div>
                 <div className="text-sm text-gray-500 mb-2">Tel: {c.telefono}</div>
 
-                {filtrosPersonalizados.length > 0 && (
+                {(filtrosPersonalizados || []).length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600 mt-2">
                     {filtrosPersonalizados.map(filtro => {
                       const valor = c.filtros_personalizados?.[filtro.nombre];
@@ -213,18 +249,8 @@ function CargaCentros() {
                 )}
               </div>
               <div className="flex justify-end mt-4 space-x-2">
-                <button
-                  onClick={() => editarCentro(c)}
-                  className="text-blue-600 text-sm underline"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => eliminarCentro(c.id)}
-                  className="text-red-600 text-sm underline"
-                >
-                  Eliminar
-                </button>
+                <button onClick={() => editarCentro(c)} className="text-blue-600 text-sm underline">Editar</button>
+                <button onClick={() => eliminarCentro(c.id)} className="text-red-600 text-sm underline">Eliminar</button>
               </div>
             </div>
           ))}

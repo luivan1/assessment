@@ -17,7 +17,6 @@ export default function UsuariosDelSistema() {
   const [modalPermisos, setModalPermisos] = useState(false);
   const [usuarioPermisos, setUsuarioPermisos] = useState(null);
 
-  // --- Para formulario alta/edición ---
   const [modalForm, setModalForm] = useState(false);
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState({
@@ -37,44 +36,50 @@ export default function UsuariosDelSistema() {
     permisos: {},
   });
 
-  // --- Para dropdown de ubicaciones ---
   const [paises, setPaises] = useState([]);
   const [estados, setEstados] = useState([]);
   const [municipios, setMunicipios] = useState([]);
 
-
+  const organizacion_id = JSON.parse(localStorage.getItem("usuario") || "{}").organizacion_id || null;
 
   useEffect(() => {
-    fetch("http://localhost:8000/usuarios")
+    fetch("http://localhost:8000/usuarios", {
+      headers: { "X-Organizacion-Id": organizacion_id }
+    })
       .then(r => r.json())
       .then(setUsuarios);
 
     fetch(URL_UBICACIONES)
       .then(r => r.json())
       .then(data => setPaises(data));
-  }, []);
+  }, [organizacion_id]);
 
-  // Cuando cambia país o estado
+  // Cuando cambia el país, actualiza estados
   useEffect(() => {
     const paisObj = paises.find(p => p.name === form.pais);
     setEstados(paisObj ? paisObj.states : []);
+    setForm(f => ({ ...f, estado: "", municipio: "" })); // Opcional: limpia selección anterior
+  }, [form.pais, paises]);
+
+  // Cuando cambia el estado, actualiza municipios
+  useEffect(() => {
     const estadoObj = estados.find(e => e.name === form.estado);
     setMunicipios(estadoObj ? estadoObj.cities : []);
-  }, [form.pais, form.estado, paises, estados]);
+    setForm(f => ({ ...f, municipio: "" })); // Opcional: limpia selección anterior
+  }, [form.estado, estados]);
 
-  // Para edición
+
   const abrirModalEditar = (usuario) => {
     setEditando(usuario.id);
     setForm({
       ...usuario,
       fechaNacimiento: usuario.fecha_nacimiento,
-      foto: null, // sólo para alta, carga real faltaría endpoint
-      contrasena: "", // solo si edita la pass
+      foto: null,
+      contrasena: "",
     });
     setModalForm(true);
   };
 
-  // Reset form
   const abrirModalAlta = () => {
     setEditando(null);
     setForm({
@@ -96,7 +101,6 @@ export default function UsuariosDelSistema() {
     setModalForm(true);
   };
 
-    // --- Manejo de cambios en el formulario ---
   const handleChange = e => {
     const { name, value, type, files } = e.target;
     if (type === "file") {
@@ -106,54 +110,80 @@ export default function UsuariosDelSistema() {
     }
   };
 
-  // --- Guardar usuario (POST o PUT) ---
   const guardarUsuario = async e => {
     e.preventDefault();
-    // Simple validación: requiere correo y nombre
-    if (!form.nombre || !form.apellido || !form.correo) {
-      alert("Nombre, apellido y correo son obligatorios");
+    // Validar los campos realmente requeridos (sin apellido)
+    if (!form.nombre || !form.correo || (!editando && !form.contrasena)) {
+      alert("Nombre, correo y contraseña son obligatorios");
       return;
     }
-    // Si editando, PUT; si no, POST
+
     const method = editando ? "PUT" : "POST";
     const url = editando
       ? `http://localhost:8000/usuarios/${editando}`
       : "http://localhost:8000/usuarios";
-    // Prepara datos (ajusta campo fecha)
-    const datos = { ...form, fecha_nacimiento: form.fechaNacimiento };
-    delete datos.fechaNacimiento;
-    // Foto/avatar (no implementado el endpoint aquí, solo dejo preparado)
-    // datos.foto_url = ... (sube archivo si tienes endpoint)
-    // No envía campo permisos en el alta, solo en permisos
-    delete datos.permisos;
-    // Guardar en backend
+
+    // Asegura los nombres de campos EXACTOS para tu backend
+    const datos = {
+      nombre: form.nombre,
+      correo: form.correo,
+      contrasena: form.contrasena,
+      organizacion_id: organizacion_id, // OBLIGATORIO para multitenant
+      apellido: form.apellido || "",
+      telefono: form.telefono || "",
+      genero: form.genero || "",
+      fechaNacimiento: form.fechaNacimiento || "",
+      direccion: form.direccion || "",
+      cp: form.cp || "",
+      pais: form.pais || "",
+      estado: form.estado || "",
+      municipio: form.municipio || "",
+      foto: typeof form.foto === "string" ? form.foto : "", // Si es archivo ignóralo, backend solo espera string (URL)
+      permisos: form.permisos || {},
+    };
+
     const res = await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Organizacion-Id": organizacion_id
+      },
       body: JSON.stringify(datos),
     });
+
     if (!res.ok) {
-      alert("Error al guardar usuario");
+      const errorText = await res.text();
+      alert("Error al guardar usuario: " + errorText);
       return;
     }
+
     setModalForm(false);
-    // Refresca lista usuarios
-    fetch("http://localhost:8000/usuarios")
+    fetch("http://localhost:8000/usuarios", {
+      headers: { "X-Organizacion-Id": organizacion_id }
+    })
       .then(r => r.json())
       .then(setUsuarios);
   };
 
-  // --- Borrar usuario ---
+
   const borrarUsuario = async (id) => {
     if (!window.confirm("¿Eliminar usuario?")) return;
-    await fetch(`http://localhost:8000/usuarios/${id}`, { method: "DELETE" });
+    await fetch(`http://localhost:8000/usuarios/${id}`, {
+      method: "DELETE",
+      headers: { "X-Organizacion-Id": organizacion_id }
+    });
     setUsuarios(us => us.filter(u => u.id !== id));
   };
 
   // --- Modal formulario ---
   const FormModal = (
     <Dialog open={modalForm} onOpenChange={setModalForm}>
-      <DialogContent className="w-full max-w-7xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="w-full max-w-7xl max-h-[90vh] overflow-y-auto"
+        description="Formulario para alta o edición de usuario"
+      >
+
+
         <DialogHeader>
           <DialogTitle>{editando ? "Editar usuario" : "Nuevo usuario"}</DialogTitle>
         </DialogHeader>
@@ -307,7 +337,10 @@ export default function UsuariosDelSistema() {
     if (!usuarioPermisos) return;
     await fetch(`http://localhost:8000/usuarios/${usuarioPermisos.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Organizacion-Id": organizacion_id
+      },
       body: JSON.stringify({ ...usuarioPermisos, permisos }),
     });
     setUsuarios(us =>
@@ -386,35 +419,56 @@ function PermisosModal({ open, onClose, usuario, onGuardar }) {
   const [busquedaPregunta, setBusquedaPregunta] = useState("");
   const [busquedaSugerencia, setBusquedaSugerencia] = useState("");
 
-  // Listados dinámicos
   const [denuncias, setDenuncias] = useState([]);
   const [preguntas, setPreguntas] = useState([]);
   const [sugerencias, setSugerencias] = useState([]);
   const [reportantes, setReportantes] = useState([]);
   const [centros, setCentros] = useState([]);
 
-  // Canales y flujos
-  const canalesDisponibles = [
-    "Web", "Teléfono", "App", "Whatsapp", "Email", "Chat", "Walking door"
-  ];
-  const flujosDisponibles = [
-    "Nuevo", "Pendiente", "En proceso", "En resolución", "En cierre"
-  ];
-  const globalesDisponibles = [
-    "dashboard", "bitacora", "estadisticas", "exportables"
-  ];
+  const canalesDisponibles = ["Web", "Teléfono", "App", "Whatsapp", "Email", "Chat", "Walking door"];
+  const flujosDisponibles = ["Nuevo", "Pendiente", "En proceso", "En resolución", "En cierre"];
+  const globalesDisponibles = ["dashboard", "bitacora", "estadisticas", "exportables"];
+
+  const organizacionId = JSON.parse(localStorage.getItem("usuario") || "{}").organizacion_id;
 
   useEffect(() => {
-    if (!open) return;
-    fetch("http://localhost:8000/denuncias").then(r => r.json()).then(setDenuncias);
-    fetch("http://localhost:8000/preguntas").then(r => r.json()).then(setPreguntas);
-    fetch("http://localhost:8000/sugerencias").then(r => r.json()).then(setSugerencias);
-    fetch("http://localhost:8000/reportantes").then(r => r.json()).then(setReportantes);
-    fetch("http://localhost:8000/centros").then(r => r.json()).then(setCentros);
-    setPermisos(usuario?.permisos || {});
-  }, [open, usuario]);
+    if (!open || !organizacionId) return;
 
-  // --- Helpers para cambiar permisos ---
+    const headers = { "X-Organizacion-Id": organizacionId };
+
+    fetch("http://localhost:8000/denuncias", { headers })
+      .then(r => r.json())
+      .then(setDenuncias);
+
+    fetch("http://localhost:8000/preguntas", { headers })
+      .then(r => r.json())
+      .then(setPreguntas);
+
+    fetch("http://localhost:8000/sugerencias", { headers })
+      .then(r => r.json())
+      .then(setSugerencias);
+
+    // --- Corrección aquí: agrega organizacion_id como query param y defensivo
+    fetch(`http://localhost:8000/reportantes?organizacion_id=${organizacionId}`, { headers })
+      .then(async r => {
+        if (!r.ok) return [];
+        const data = await r.json();
+        return Array.isArray(data) ? data : [];
+      })
+      .then(setReportantes);
+
+    fetch(`http://localhost:8000/centros?organizacion_id=${organizacionId}`, { headers })
+      .then(async r => {
+        if (!r.ok) return [];
+        const data = await r.json();
+        return Array.isArray(data) ? data : [];
+      })
+      .then(setCentros);
+
+    setPermisos(usuario?.permisos || {});
+  }, [open, usuario, organizacionId]);
+
+
   const togglePermiso = (seccion, id, tipo, checked) => {
     setPermisos(prev => {
       const actual = { ...prev };
@@ -482,7 +536,6 @@ function PermisosModal({ open, onClose, usuario, onGuardar }) {
     });
   };
 
-  // --- Select all helpers ---
   const selectAll = (seccion, tipo) => {
     setPermisos(prev => {
       const actual = { ...prev };
@@ -508,7 +561,12 @@ function PermisosModal({ open, onClose, usuario, onGuardar }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-7xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="w-full max-w-7xl max-h-[90vh] overflow-y-auto"
+        description="Configuración de permisos personalizados para el usuario"
+      >
+
+
         <DialogHeader>
           <DialogTitle>Permisos del usuario</DialogTitle>
         </DialogHeader>

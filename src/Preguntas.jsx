@@ -6,6 +6,9 @@ function Preguntas() {
   const [preguntasEditables, setPreguntasEditables] = useState([]);
   const [catalogoBase, setCatalogoBase] = useState({ preguntas: [] });
 
+  const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+  const ORGANIZACION_ID = usuario.organizacion_id;
+
   useEffect(() => {
     fetch("/catalogo_completo_integrado.json")
       .then((res) => {
@@ -20,7 +23,9 @@ function Preguntas() {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:8000/preguntas')
+    fetch('http://localhost:8000/preguntas', {
+      headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
+    })
       .then(res => res.json())
       .then(data => setPreguntasBD(data))
       .catch(() => setPreguntasBD([]));
@@ -36,19 +41,24 @@ function Preguntas() {
   }, [preguntasBD]);
 
   const agregarPregunta = (itemBase) => {
-    const nueva = {
-      cliente_id: 1,
-      titulo: itemBase.titulo,
-      descripcion: itemBase.descripcion,
-      titulo_original: itemBase.titulo,
-    };
+   const nueva = {
+    titulo: itemBase.titulo,
+    descripcion: itemBase.descripcion,
+    titulo_original: itemBase.titulo,
+    organizacion_id: ORGANIZACION_ID   // 👈 AÑADIR ESTO
+  };
 
     fetch('http://localhost:8000/preguntas', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Organizacion-ID': ORGANIZACION_ID
+      },
       body: JSON.stringify(nueva)
     })
-      .then(() => fetch('http://localhost:8000/preguntas'))
+      .then(() => fetch('http://localhost:8000/preguntas', {
+        headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
+      }))
       .then(res => res.json())
       .then(data => setPreguntasBD(data));
   };
@@ -64,17 +74,24 @@ function Preguntas() {
     const pregunta = preguntasEditables.find(p => p.id === id);
     fetch(`http://localhost:8000/preguntas/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Organizacion-ID': ORGANIZACION_ID
+      },
       body: JSON.stringify(pregunta)
     })
-      .then(() => fetch('http://localhost:8000/preguntas'))
+      .then(() => fetch('http://localhost:8000/preguntas', {
+        headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
+      }))
       .then(res => res.json())
       .then(data => setPreguntasBD(data));
   };
 
   const editarPregunta = (id, cancelar = false) => {
     if (cancelar) {
-      fetch('http://localhost:8000/preguntas')
+      fetch('http://localhost:8000/preguntas', {
+        headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
+      })
         .then(res => res.json())
         .then(data => setPreguntasBD(data));
     } else {
@@ -86,9 +103,12 @@ function Preguntas() {
 
   const eliminarPregunta = (id) => {
     fetch(`http://localhost:8000/preguntas/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
     })
-      .then(() => fetch('http://localhost:8000/preguntas'))
+      .then(() => fetch('http://localhost:8000/preguntas', {
+        headers: { 'X-Organizacion-ID': ORGANIZACION_ID }
+      }))
       .then(res => res.json())
       .then(data => setPreguntasBD(data));
   };

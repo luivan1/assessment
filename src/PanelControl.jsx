@@ -2,18 +2,47 @@ import { useEffect, useState } from "react";
 
 export default function PanelControl() {
   const [usuarios, setUsuarios] = useState([]);
+  const [organizaciones, setOrganizaciones] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({ correo: "", contrasena: "", rol: "cliente", organizacion: "" });
+  const [form, setForm] = useState({ correo: "", contrasena: "", rol: "cliente", organizacion_id: "" });
+  const [orgForm, setOrgForm] = useState({ nombre: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [creando, setCreando] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
 
+  // 👇 Para edición de organizaciones
+  const [editandoOrgId, setEditandoOrgId] = useState(null);
+  const [orgEditada, setOrgEditada] = useState("");
+  const [orgError, setOrgError] = useState("");
+
+  const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+
+  useEffect(() => {
+    fetch("http://localhost:8000/organizaciones", {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Usuario-Id": usuario.usuario_id,
+      },
+    })
+      .then(r => r.json())
+      .then(setOrganizaciones);
+  }, []);
+
   useEffect(() => {
     setLoading(true);
-    fetch("http://localhost:8000/usuarios-acceso")
-      .then(r => r.json())
-      .then(data => setUsuarios(Array.isArray(data) ? data : []))
+    Promise.all([
+    fetch("http://localhost:8000/usuarios-acceso", {
+      headers: { "Content-Type": "application/json", "X-Usuario-Id": usuario.usuario_id },
+    }).then(r => r.json()),
+    fetch("http://localhost:8000/organizaciones", {
+      headers: { "Content-Type": "application/json", "X-Usuario-Id": usuario.usuario_id },
+    }).then(r => r.json()),
+  ])
+      .then(([usuariosData, organizacionesData]) => {
+        setUsuarios(Array.isArray(usuariosData) ? usuariosData : []);
+        setOrganizaciones(Array.isArray(organizacionesData) ? organizacionesData : []);
+      })
       .finally(() => setLoading(false));
   }, [creando]);
 
@@ -23,10 +52,28 @@ export default function PanelControl() {
     setSuccess("");
   };
 
-  // Crear o editar usuario
+  const handleOrgChange = e => setOrgForm({ ...orgForm, [e.target.name]: e.target.value });
+
+  const crearOrganizacion = async (e) => {
+    e.preventDefault();
+    if (!orgForm.nombre.trim()) return;
+    try {
+      const resp = await fetch("http://localhost:8000/organizaciones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orgForm)
+      });
+      if (resp.ok) {
+        const nueva = await resp.json();
+        setOrganizaciones(prev => [...prev, nueva]);
+        setOrgForm({ nombre: "" });
+      }
+    } catch {}
+  };
+
   const guardarUsuario = async (e) => {
     e.preventDefault();
-    if (!form.correo || !form.contrasena || !form.organizacion) {
+    if (!form.correo || !form.contrasena || (form.rol === "cliente" && !form.organizacion_id)) {
       setError("Correo, contraseña y organización requeridos");
       return;
     }
@@ -38,16 +85,23 @@ export default function PanelControl() {
         ? `http://localhost:8000/usuarios-acceso/${editandoId}`
         : "http://localhost:8000/usuarios-acceso";
       const method = editandoId ? "PUT" : "POST";
+
+      const payload = { ...form };
+      if (payload.rol === "admin") {
+        delete payload.organizacion_id;
+      }
+
       const resp = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify(payload),
       });
+
       if (!resp.ok) {
         const msg = await resp.json();
         setError(msg.detail || "No se pudo guardar el usuario");
       } else {
-        setForm({ correo: "", contrasena: "", rol: "cliente", organizacion: "" });
+        setForm({ correo: "", contrasena: "", rol: "cliente", organizacion_id: "" });
         setSuccess(editandoId ? "Usuario actualizado" : "Usuario creado exitosamente");
         setEditandoId(null);
       }
@@ -55,10 +109,8 @@ export default function PanelControl() {
       setError("Error de conexión");
     }
     setCreando(false);
-    // Refresca usuarios (el useEffect lo hará)
   };
 
-  // Eliminar usuario
   const borrarUsuario = async (id) => {
     if (!window.confirm("¿Eliminar este usuario?")) return;
     setLoading(true);
@@ -67,25 +119,87 @@ export default function PanelControl() {
     setUsuarios(u => u.filter(us => us.id !== id));
   };
 
-  // Editar usuario
   const editarUsuario = (usuario) => {
     setEditandoId(usuario.id);
     setForm({
       correo: usuario.correo,
       contrasena: usuario.contrasena || "",
       rol: usuario.rol,
-      organizacion: usuario.organizacion || "",
+      organizacion_id: usuario.organizacion_id || "",
     });
     setError("");
     setSuccess("");
   };
 
-  // Usuario logueado
+  // Editar organización
+  const editarOrganizacion = (org) => {
+    setEditandoOrgId(org.id);
+    setOrgEditada(org.nombre);
+    setOrgError("");
+  };
+
+  // Guardar cambios de organización
+  const guardarOrganizacion = async () => {
+    if (!orgEditada.trim()) {
+      setOrgError("El nombre no puede estar vacío");
+      return;
+    }
+    try {
+      const resp = await fetch(`http://localhost:8000/organizaciones/${editandoOrgId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: orgEditada }),
+      });
+      if (!resp.ok) {
+        const data = await resp.json();
+        setOrgError(data.detail || "No se pudo actualizar la organización");
+      } else {
+        setOrganizaciones((prev) =>
+          prev.map((o) => (o.id === editandoOrgId ? { ...o, nombre: orgEditada } : o))
+        );
+        setEditandoOrgId(null);
+        setOrgEditada("");
+      }
+    } catch {
+      setOrgError("Error al conectar con el servidor");
+    }
+  };
+
+  // Borrar organización
+  const borrarOrganizacion = async (id) => {
+    if (!window.confirm("¿Eliminar esta organización?")) return;
+    try {
+      await fetch(`http://localhost:8000/organizaciones/${id}`, { method: "DELETE" });
+      setOrganizaciones((prev) => prev.filter((o) => o.id !== id));
+    } catch {
+      alert("Error al eliminar la organización");
+    }
+  };
+
   const usuarioLog = JSON.parse(localStorage.getItem("usuario") || "{}");
 
   return (
-    <div className="max-w-2xl mx-auto p-6 rounded-lg shadow bg-white border">
+    <div className="max-w-3xl mx-auto p-6 rounded-lg shadow bg-white border">
       <h2 className="text-xl font-bold mb-6">Panel de Control</h2>
+
+      {/* Crear organización */}
+      <div className="mb-8">
+        <h3 className="font-semibold mb-2">Crear nueva organización</h3>
+        <form className="flex gap-3" onSubmit={crearOrganizacion}>
+          <input
+            className="border rounded px-3 py-2 flex-1"
+            name="nombre"
+            placeholder="Nombre de la organización"
+            value={orgForm.nombre}
+            onChange={handleOrgChange}
+          />
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Agregar
+          </button>
+        </form>
+      </div>
+
+      {/* Crear o editar usuario */}
       <h3 className="font-semibold mb-2">
         {editandoId ? "Editar usuario de acceso" : "Crear usuario de acceso"}
       </h3>
@@ -109,15 +223,20 @@ export default function PanelControl() {
           onChange={handleChange}
           required
         />
-        <input
-          className="border rounded px-3 py-2"
-          name="organizacion"
-          type="text"
-          placeholder="Organización"
-          value={form.organizacion}
-          onChange={handleChange}
-          required
-        />
+        {form.rol === "cliente" && (
+          <select
+            className="border rounded px-3 py-2"
+            name="organizacion_id"
+            value={form.organizacion_id}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Selecciona una organización</option>
+            {organizaciones.map(org => (
+              <option key={org.id} value={org.id}>{org.nombre}</option>
+            ))}
+          </select>
+        )}
         <select
           className="border rounded px-3 py-2"
           name="rol"
@@ -141,7 +260,7 @@ export default function PanelControl() {
               className="text-gray-500 hover:underline ml-2"
               onClick={() => {
                 setEditandoId(null);
-                setForm({ correo: "", contrasena: "", rol: "cliente", organizacion: "" });
+                setForm({ correo: "", contrasena: "", rol: "cliente", organizacion_id: "" });
                 setError(""); setSuccess("");
               }}
             >
@@ -153,6 +272,7 @@ export default function PanelControl() {
         {success && <span className="text-green-600 text-sm">{success}</span>}
       </form>
 
+      {/* Tabla de usuarios */}
       <h3 className="font-semibold mb-2">Usuarios registrados</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full border text-sm">
@@ -174,7 +294,7 @@ export default function PanelControl() {
               <tr key={us.id}>
                 <td className="border px-2 py-1">{us.correo}</td>
                 <td className="border px-2 py-1">{us.rol || "cliente"}</td>
-                <td className="border px-2 py-1">{us.organizacion || "-"}</td>
+                <td className="border px-2 py-1">{us.organizacion?.nombre || "-"}</td>
                 <td className="border px-2 py-1 text-center">
                   <button
                     className="text-blue-600 hover:underline mr-2"
@@ -183,7 +303,6 @@ export default function PanelControl() {
                   >
                     Editar
                   </button>
-                  {/* Solo muestra el botón eliminar si NO es el usuario logueado */}
                   {us.correo !== usuarioLog.correo && (
                     <button
                       className="text-red-600 hover:underline"
@@ -198,6 +317,57 @@ export default function PanelControl() {
             ))}
           </tbody>
         </table>
+      </div>
+            {/* Lista de organizaciones registradas */}
+      <div className="mt-10">
+        <h3 className="font-semibold mb-2">Organizaciones registradas</h3>
+        <ul className="space-y-2">
+          {organizaciones.map((org) => (
+            <li key={org.id} className="flex items-center gap-2 border p-2 rounded">
+              {editandoOrgId === org.id ? (
+                <>
+                  <input
+                    className="border rounded px-2 py-1 flex-1"
+                    value={orgEditada}
+                    onChange={(e) => setOrgEditada(e.target.value)}
+                  />
+                  <button
+                    className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
+                    onClick={guardarOrganizacion}
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    className="text-gray-600 hover:underline"
+                    onClick={() => {
+                      setEditandoOrgId(null);
+                      setOrgEditada("");
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1">{org.nombre}</span>
+                  <button
+                    className="text-blue-600 hover:underline"
+                    onClick={() => editarOrganizacion(org)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="text-red-600 hover:underline"
+                    onClick={() => borrarOrganizacion(org.id)}
+                  >
+                    Eliminar
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+        {orgError && <p className="text-red-600 text-sm mt-2">{orgError}</p>}
       </div>
     </div>
   );

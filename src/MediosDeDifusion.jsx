@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Pencil, Save } from "lucide-react";
+import { X, Pencil } from "lucide-react";
 import axios from "axios";
 
 const categorias = {
@@ -35,8 +35,14 @@ export default function MediosDeDifusion() {
   const [editandoId, setEditandoId] = useState(null);
   const [etiquetaTemp, setEtiquetaTemp] = useState("");
 
+  const organizacion_id = JSON.parse(localStorage.getItem("usuario") || "{}").organizacion_id || null;
+
+  const headers = {
+    "X-Organizacion-Id": organizacion_id
+  };
+
   useEffect(() => {
-    axios.get("http://localhost:8000/medios").then((res) => {
+    axios.get("http://localhost:8000/medios", { headers }).then((res) => {
       setMedios(res.data);
     });
   }, []);
@@ -47,47 +53,49 @@ export default function MediosDeDifusion() {
       ...actualizado,
       etiqueta: etiquetaTemp
     };
-    const res = await axios.put(`http://localhost:8000/medios/${id}`, payload);
+    const res = await axios.put(`http://localhost:8000/medios/${id}`, payload, { headers });
     setMedios((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...res.data } : m
-      )
+      prev.map((m) => (m.id === id ? { ...res.data } : m))
     );
     setEditandoId(null);
     setEtiquetaTemp("");
   };
 
   const eliminarMedio = async (id) => {
-    await axios.delete(`http://localhost:8000/medios/${id}`);
+    await axios.delete(`http://localhost:8000/medios/${id}`, { headers });
     setMedios((prev) => prev.filter((m) => m.id !== id));
   };
 
   const agregarMedio = async (texto, categoria) => {
     const nuevo = {
-      cliente_id: 1,
       categoria,
       etiqueta: texto,
       etiqueta_original: texto,
       visible_en_reporte: true,
       orden: null,
-      descripcion: null
+      descripcion: null,
+      organizacion_id // 👈 esto es clave
     };
-    const res = await axios.post("http://localhost:8000/medios", nuevo);
+
+    const res = await axios.post("http://localhost:8000/medios", nuevo, { headers });
     setMedios((prev) => [...prev, res.data]);
   };
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <h2 className="text-2xl font-bold mb-4">Medios de difusión de Línea Ética EthicsGlobal</h2>
-      <p className="text-gray-600 mb-6 italic">
+
+      <p className="text-gray-600 italic mb-1">
         Selecciona los medios a través de los cuales darás a conocer la Línea Ética de EthicsGlobal.
-        <br /><br />
-        Puedes:
-        <ul className="list-disc list-inside ml-4">
-          <li>Agregar un mismo medio más de una vez si lo utilizas en diferentes contextos.</li>
-          <li>Editar la etiqueta con el nombre de tu preferencia.</li>
-        </ul>
-        <br />
+      </p>
+
+      <p className="text-gray-600 italic mb-1">Puedes:</p>
+      <ul className="list-disc list-inside ml-4 text-gray-600 italic mb-4">
+        <li>Agregar un mismo medio más de una vez si lo utilizas en diferentes contextos.</li>
+        <li>Editar la etiqueta con el nombre de tu preferencia.</li>
+      </ul>
+
+      <p className="text-gray-600 italic">
         ⚠️ <strong>Importante:</strong> No modifiques la etiqueta si el contenido que vas a ingresar
         pertenece a otro tipo de medio. Esto nos ayuda a evaluar correctamente el alcance e impacto
         de tu campaña de difusión.

@@ -1,14 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Pencil, Trash2, Save, X } from 'lucide-react';
+import GestionCategorias from "./components/Denuncias/GestionCategorias";
+import { getTiposReportante } from "./helpers/getTiposReportante";
 
 function Denuncias() {
   const [tiposReportante, setTiposReportante] = useState([]);
   const [denunciasBD, setDenunciasBD] = useState([]);
   const [categoriasBD, setCategoriasBD] = useState([]);
   const [categoriaIdMap, setCategoriaIdMap] = useState({});
-  const [editandoId, setEditandoId] = useState(null);
-  const [modoAgregar, setModoAgregar] = useState(false);
-  const [formCategoria, setFormCategoria] = useState({ titulo: '', descripcion: '' });
   const [nuevaDenuncia, setNuevaDenuncia] = useState(null);
   const [plantillasBase, setPlantillasBase] = useState([]);
   const [tituloOriginalBase, setTituloOriginalBase] = useState('');
@@ -18,6 +17,10 @@ function Denuncias() {
   const normalizar = (texto) =>
     (texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+  useEffect(() => {
+    getTiposReportante().then(setTiposReportante);
+  }, [])
+
   const plantillasAgrupadas = plantillasBase.reduce((acc, plantilla) => {
     const categoria = plantilla.categoria_original || 'Otras';
     if (!acc[categoria]) acc[categoria] = [];
@@ -26,7 +29,11 @@ function Denuncias() {
   }, {});
 
   const restaurarDenuncias = () => {
-    if (window.confirm("¿Estás seguro de que deseas restaurar el catálogo inicial de denuncias? Esta acción eliminará todos los cambios realizados.")) {
+    if (
+      window.confirm(
+        "¿Estás seguro de que deseas restaurar el catálogo inicial de denuncias? Esta acción eliminará todos los cambios realizados."
+      )
+    ) {
       fetch("http://localhost:8000/restaurar-denuncias", {
         method: "POST",
       })
@@ -36,22 +43,49 @@ function Denuncias() {
         })
         .then(() => {
           alert("Catálogo restaurado correctamente.");
-          fetch("http://localhost:8000/denuncias")
+          const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+          const organizacion_id = usuario.organizacion_id;
+
+          // 🟡 Fetch de denuncias con header multitenant
+          fetch("http://localhost:8000/denuncias", {
+            headers: {
+              "X-Organizacion-ID": organizacion_id,
+            },
+          })
             .then((res) => res.json())
             .then((data) => setDenunciasBD(data))
-            .catch(() => setDenunciasBD([]));
+            .catch((err) => {
+              console.error("🚨 Error al cargar denuncias:", err);
+              setDenunciasBD([]);
+            });
 
-          fetch("http://localhost:8000/categorias-denuncia")
+          // 🟡 Fetch de categorías con header multitenant
+          fetch("http://localhost:8000/categorias-denuncia", {
+            headers: {
+              "X-Organizacion-ID": organizacion_id,
+            },
+          })
             .then((res) => res.json())
             .then((data) => {
-              setCategoriasBD(data);
+              if (!Array.isArray(data)) {
+                console.error("❌ Esperaba un arreglo de categorías pero recibí:", data);
+                alert("Error: el servidor no devolvió una lista de categorías.");
+                setCategoriasBD([]);
+                return;
+              }
+
               const map = {};
               data.forEach((cat) => {
                 map[normalizar(cat.titulo)] = cat.id;
               });
+
+              setCategoriasBD(data);
               setCategoriaIdMap(map);
             })
-            .catch(() => setCategoriasBD([]));
+            .catch((err) => {
+              console.error("🚨 Error al cargar categorías:", err);
+              setCategoriasBD([]);
+            });
         })
         .catch((err) => {
           console.error(err);
@@ -67,19 +101,49 @@ function Denuncias() {
   }, [nuevaDenuncia]);
 
   useEffect(() => {
-    fetch('http://localhost:8000/reportantes')
-      .then((res) => res.json())
-      .then((data) => setTiposReportante(data.map((r) => r.etiqueta)))
-      .catch(() => setTiposReportante([]));
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+    const organizacion_id = usuario.organizacion_id;
 
-    fetch('http://localhost:8000/denuncias')
-      .then((res) => res.json())
-      .then((data) => setDenunciasBD(data))
-      .catch(() => setDenunciasBD([]));
+    if (!organizacion_id) {
+      console.error("❌ No se encontró organizacion_id en localStorage");
+      return;
+    }
 
-    fetch('http://localhost:8000/categorias-denuncia')
+    fetch(`http://localhost:8000/reportantes?organizacion_id=${organizacion_id}`)
       .then((res) => res.json())
       .then((data) => {
+        if (!Array.isArray(data)) throw new Error("❌ Reportantes no es un arreglo");
+        setTiposReportante(data); // ← ✅ guarda el arreglo completo con id, etiqueta, etiqueta_original
+      })
+      .catch((err) => {
+        console.error("🚨 Error al cargar reportantes:", err);
+        setTiposReportante([]);
+      });
+
+    fetch('http://localhost:8000/denuncias', {
+      headers: { "X-Organizacion-ID": organizacion_id }
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!Array.isArray(data)) throw new Error("❌ Denuncias no es un arreglo");
+        setDenunciasBD(data);
+      })
+      .catch((err) => {
+        console.error("🚨 Error al cargar denuncias:", err);
+        setDenunciasBD([]);
+      });
+
+    fetch('http://localhost:8000/categorias-denuncia', {
+      headers: { "X-Organizacion-ID": organizacion_id }
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          console.error("❌ El backend no devolvió una lista:", data);
+          alert("Error al cargar las categorías.");
+          setCategoriasBD([]);
+          return;
+        }
         const map = {};
         data.forEach((cat) => {
           map[normalizar(cat.titulo)] = cat.id;
@@ -144,7 +208,6 @@ function Denuncias() {
       id: item.id,
       cliente_id: item.cliente_id,
       categoria_id: item.categoria_id,
-      categoria: categoriasBD.find((c) => c.id === item.categoria_id)?.titulo || '',
       titulo: item.titulo || '',
       titulo_original: item.titulo_original,
       titulo_original_base: item.titulo_original || '',
@@ -162,10 +225,20 @@ function Denuncias() {
   const eliminarDenuncia = (id) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar esta denuncia?")) return;
 
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+    const organizacion_id = usuario.organizacion_id;
+
     fetch(`http://localhost:8000/denuncias/${id}`, {
       method: 'DELETE',
+      headers: {
+        "X-Organizacion-ID": organizacion_id
+      }
     })
-      .then(() => fetch('http://localhost:8000/denuncias'))
+      .then(() => fetch('http://localhost:8000/denuncias', {
+        headers: {
+          "X-Organizacion-ID": organizacion_id
+        }
+      }))
       .then((res) => res.json())
       .then((data) => setDenunciasBD(data))
       .catch((err) => {
@@ -175,12 +248,12 @@ function Denuncias() {
   };
 
   const guardarDenuncia = () => {
+    const usuario = JSON.parse(localStorage.getItem("usuario") || "{}");
+    const organizacion_id = usuario.organizacion_id;
+
     const esEdicion = !!nuevaDenuncia.id;
 
-    const categoriaNormalizada = normalizar(nuevaDenuncia.categoria);
-    const categoria_id = categoriaIdMap[categoriaNormalizada];
-
-    if (!categoria_id) {
+    if (!nuevaDenuncia.categoria_id) {
       alert("Debe seleccionar una categoría válida antes de guardar.");
       return;
     }
@@ -193,18 +266,27 @@ function Denuncias() {
 
     const datosAGuardar = {
       ...nuevaDenuncia,
-      categoria_id,
+      categoria_id: nuevaDenuncia.categoria_id,
       titulo_original: esEdicion
         ? nuevaDenuncia.titulo_original
         : tituloOriginalBase || nuevaDenuncia.titulo,
     };
 
+
+
     fetch(url, {
       method: metodo,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Organizacion-ID': organizacion_id
+      },
       body: JSON.stringify(datosAGuardar),
     })
-      .then(() => fetch('http://localhost:8000/denuncias'))
+      .then(() => fetch('http://localhost:8000/denuncias', {
+        headers: {
+          'X-Organizacion-ID': organizacion_id
+        }
+      }))
       .then((res) => res.json())
       .then((data) => {
         setDenunciasBD(data);
@@ -223,56 +305,17 @@ function Denuncias() {
 
   const toggleTipoReportante = (etiqueta) => {
     setNuevaDenuncia((prev) => {
-      const actual = prev.tipos_reportante.includes(etiqueta);
+      const yaIncluido = prev.tipos_reportante.includes(etiqueta);
+      const nuevos = yaIncluido
+        ? prev.tipos_reportante.filter((t) => t !== etiqueta)
+        : [...prev.tipos_reportante, etiqueta];
       return {
         ...prev,
-        tipos_reportante: actual
-          ? prev.tipos_reportante.filter((t) => t !== etiqueta)
-          : [...prev.tipos_reportante, etiqueta],
+        tipos_reportante: nuevos,
       };
     });
   };
 
-  /* ------------------------------ CRUD categorías ----------------------------- */
-  const guardarCategoria = () => {
-    const metodo = editandoId ? 'PUT' : 'POST';
-    const url = editandoId
-      ? `http://localhost:8000/categorias-denuncia/${editandoId}`
-      : 'http://localhost:8000/categorias-denuncia';
-
-    fetch(url, {
-      method: metodo,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cliente_id: 1, ...formCategoria }),
-    })
-      .then(() => {
-        setEditandoId(null);
-        setFormCategoria({ titulo: '', descripcion: '' });
-        setModoAgregar(false);
-        return fetch('http://localhost:8000/categorias-denuncia');
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        setCategoriasBD(data);
-
-        const map = {};
-        data.forEach((cat) => {
-          map[normalizar(cat.titulo)] = cat.id;
-        });
-        setCategoriaIdMap(map);
-      })
-      .catch((err) => {
-        console.error("Error al guardar categoría:", err);
-        alert("Hubo un error al guardar la categoría.");
-      });
-  };
-
-  const eliminarCategoria = (id) => {
-    fetch(`http://localhost:8000/categorias-denuncia/${id}`, { method: 'DELETE' })
-      .then(() => fetch('http://localhost:8000/categorias-denuncia'))
-      .then((res) => res.json())
-      .then((data) => setCategoriasBD(data));
-  };
 
   /* -------------------------------------------------------------------------- */
   /*                                   Render                                   */
@@ -283,103 +326,13 @@ function Denuncias() {
       <p className="text-sm italic text-gray-600 mb-6">
         Selecciona los tipos de denuncia que aplican y edítalos según tu lenguaje corporativo. Puedes agregar varios del mismo tipo.
       </p>
+      <GestionCategorias
+        categoriasBD={categoriasBD}
+        setCategoriasBD={setCategoriasBD}
+/>
 
-      {!modoAgregar && (
-        <div className="mb-6 flex gap-4">
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            onClick={() => setModoAgregar(true)}
-          >
-            Agregar nueva categoría de denuncia
-          </button>
-          {/*
-          <button
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-            onClick={restaurarDenuncias}
-          >
-            Restaurar denuncias
-          </button>
-          */}
-        </div>
-      )}
 
-      {(modoAgregar || editandoId) && (
-        <div className="mb-6 p-4 border rounded bg-gray-50">
-          <h3 className="text-lg font-semibold mb-3">
-            {editandoId ? 'Editar categoría' : 'Agregar nueva categoría'}
-          </h3>
-
-          <input
-            type="text"
-            placeholder="Título de la categoría"
-            value={formCategoria.titulo}
-            onChange={(e) =>
-              setFormCategoria({ ...formCategoria, titulo: e.target.value })
-            }
-            className="w-full mb-3 p-2 border rounded"
-          />
-
-          <textarea
-            placeholder="Descripción"
-            value={formCategoria.descripcion}
-            onChange={(e) =>
-              setFormCategoria({ ...formCategoria, descripcion: e.target.value })
-            }
-            className="w-full mb-4 p-2 border rounded"
-          />
-
-          <div className="flex gap-2">
-            <button
-              onClick={guardarCategoria}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-              <Save size={16} className="inline mr-1" />
-              Guardar
-            </button>
-
-            <button
-              onClick={() => {
-                setFormCategoria({ titulo: '', descripcion: '' });
-                setEditandoId(null);
-                setModoAgregar(false);
-              }}
-              className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-            >
-              <X size={16} className="inline mr-1" />
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* --------------------------- Lista de categorías -------------------------- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
-        {categoriasBD.map((cat) => (
-          <div
-            key={cat.id}
-            className="p-4 border rounded bg-white shadow-sm flex justify-between items-start"
-          >
-            <div>
-              <p className="font-semibold text-blue-800">{cat.titulo}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="text-blue-600"
-                onClick={() => {
-                  setEditandoId(cat.id);
-                  setFormCategoria({ titulo: cat.titulo, descripcion: cat.descripcion });
-                  setModoAgregar(true);
-                }}
-              >
-                <Pencil size={16} />
-              </button>
-              <button className="text-red-600" onClick={() => eliminarCategoria(cat.id)}>
-                <Trash2 size={16} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+  
 
      {/* ------------------- Botones de plantillas (agrupadas) ------------------- */}
     <div className="mt-10">
@@ -511,31 +464,44 @@ function Denuncias() {
             <select
               id="categoria-denuncia"
               className="w-full border border-gray-400 rounded-md p-2 mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={nuevaDenuncia.categoria || ''}
-              onChange={(e) => actualizarCampoDenuncia('categoria', e.target.value)}
+              value={nuevaDenuncia.categoria_id || ''}
+              onChange={(e) => actualizarCampoDenuncia('categoria_id', Number(e.target.value))}
             >
               <option value="">Selecciona una categoría</option>
-              {categoriasBD.map((cat) => (
-                <option key={cat.id} value={cat.titulo}>
-                  {cat.titulo}
-                </option>
-              ))}
+              {Array.isArray(categoriasBD) &&
+                categoriasBD.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.titulo}
+                  </option>
+                ))}
             </select>
 
             <div className="mb-6">
               <p className="text-sm font-semibold mb-2">Tipos de reportante:</p>
               <div className="flex flex-wrap gap-3">
-                {tiposReportante.map((tipo) => (
-                  <label key={tipo} className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={nuevaDenuncia.tipos_reportante.includes(tipo)}
-                      onChange={() => toggleTipoReportante(tipo)}
-                      className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-sm">{tipo}</span>
-                  </label>
-                ))}
+                {tiposReportante.map((tipo) => {
+                  const estaMarcado = nuevaDenuncia.tipos_reportante.includes(tipo.etiqueta);
+                  const estaEditado = tipo.etiqueta !== tipo.etiqueta_original;
+
+                  return (
+                    <label key={tipo.id} className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={estaMarcado}
+                        onChange={() => toggleTipoReportante(tipo.etiqueta)}
+                        className="rounded border-gray-300 focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="text-sm">
+                        {tipo.etiqueta}
+                        {estaEditado && (
+                          <span className="text-red-600 italic ml-1">
+                            ({tipo.etiqueta_original})
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
@@ -568,18 +534,19 @@ function Denuncias() {
       <hr className="my-6 border-gray-300" />
 
       {/* ------------------ Denuncias guardadas, agrupadas por cat ------------------ */}
-      {categoriasBD.map((categoria) => {
-        const denuncias = denunciasBD.filter((d) => d.categoria_id === categoria.id);
-        const catalogo = plantillasBase.filter(
-          (p) => normalizar(p.categoria_original) === normalizar(categoria.titulo)
-        );
+      {Array.isArray(categoriasBD) &&
+        categoriasBD.map((categoria) => {
+          const denuncias = denunciasBD.filter((d) => d.categoria_id === categoria.id);
+          const catalogo = plantillasBase.filter(
+            (p) => normalizar(p.categoria_original) === normalizar(categoria.titulo)
+          );
 
-        return (
-          <div key={categoria.id} className="mb-10">
-            <h2 className="text-xl font-bold text-blue-700 mb-1">{categoria.titulo}</h2>
-            <p className="text-sm text-gray-700 mb-4">{categoria.descripcion}</p>
+          return (
+            <div key={categoria.id} className="mb-10">
+              <h2 className="text-xl font-bold text-blue-700 mb-1">{categoria.titulo}</h2>
+              <p className="text-sm text-gray-700 mb-4">{categoria.descripcion}</p>
 
-           {/* botones para agregar más denuncias predefinidas */}
+            {/* botones para agregar más denuncias predefinidas */}
             <div className="flex flex-wrap gap-3 mb-4">
               {catalogo.map((item) => (
                 <button

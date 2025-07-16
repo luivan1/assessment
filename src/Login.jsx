@@ -1,12 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ← necesario para redirigir
 
 export default function Login({ onLogin }) {
   const [correo, setCorreo] = useState("");
   const [contrasena, setContrasena] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate(); // ← hook de navegación
 
-  // Para probar rápido (puedes quitar el autocomplete)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -21,17 +22,25 @@ export default function Login({ onLogin }) {
         const { detail } = await res.json();
         throw new Error(detail || "Error al iniciar sesión");
       }
+
       const data = await res.json();
 
-      // --- GUARDAR correo, usuario_id y rol EN localStorage:
-      localStorage.setItem(
-        "usuario",
-        JSON.stringify({
-          correo,                 // el correo que se logueó
-          usuario_id: data.usuario_id,
-          rol: data.rol
-        })
-      );
+      // Guardar usuario en localStorage
+      localStorage.setItem("usuario", JSON.stringify({
+        correo: data.correo,
+        usuario_id: data.usuario_id,
+        rol: data.rol,
+        organizacion_id: data.organizacion_id
+      }));
+
+      // Redirigir según rol
+      if (data.rol === "admin") {
+        navigate("/seleccionar-organizacion");
+      } else {
+        navigate("/app");
+      }
+
+      // Callback opcional
       onLogin(data);
     } catch (err) {
       setError(err.message);

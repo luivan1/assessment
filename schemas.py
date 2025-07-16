@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict, List
+from datetime import datetime
 
 # --- Centro de Trabajo ---
 
@@ -14,10 +15,26 @@ class CentroTrabajoBase(BaseModel):
     filtros_personalizados: Optional[Dict[str, str]] = {}
 
 class CentroTrabajoCrear(CentroTrabajoBase):
-    pass
+    organizacion_id: int  # ✅ Necesario para multitenencia
 
 class CentroTrabajoSalida(CentroTrabajoBase):
     id: int
+    organizacion_id: int  # ✅ También útil para respuestas
+
+    class Config:
+        orm_mode = True
+
+# --- Organización ---
+
+class OrganizacionBase(BaseModel):
+    nombre: str
+
+class OrganizacionCrear(OrganizacionBase):
+    pass
+
+class OrganizacionSalida(OrganizacionBase):
+    id: int
+    fecha_creacion: datetime
 
     class Config:
         orm_mode = True
@@ -29,9 +46,26 @@ class FiltroBase(BaseModel):
     valores: List[str]
 
 class FiltroCrear(FiltroBase):
-    pass
+    organizacion_id: int  # ✅ Necesario
 
 class FiltroSalida(FiltroBase):
+    id: int
+    organizacion_id: int  # ✅ También útil
+
+    class Config:
+        orm_mode = True
+
+# --- Configuración de Filtros (activos y orden) ---
+
+class ConfiguracionFiltrosBase(BaseModel):
+    filtros_activos: List[str]
+    orden_filtros: List[str]
+    organizacion_id: int
+
+class ConfiguracionFiltrosCrear(ConfiguracionFiltrosBase):
+    pass
+
+class ConfiguracionFiltrosSalida(ConfiguracionFiltrosBase):
     id: int
 
     class Config:
@@ -40,7 +74,7 @@ class FiltroSalida(FiltroBase):
 # --- Tipos de Reportante ---
 
 class TipoReportanteBase(BaseModel):
-    cliente_id: int
+    organizacion_id: int  # ✅ Reemplaza cliente_id en sistemas multitenant
     tipo_base: str
     etiqueta: str
     anonimo: bool = False
@@ -60,7 +94,7 @@ class TipoReportanteSalida(TipoReportanteBase):
 # --- Catálogo de Cierres ---
 
 class CatalogoCierreBase(BaseModel):
-    cliente_id: int
+    organizacion_id: int
     categoria: str
     etiqueta: str
     etiqueta_original: Optional[str] = None
@@ -80,7 +114,7 @@ class CatalogoCierreSalida(CatalogoCierreBase):
 # --- Medios de Difusión ---
 
 class MedioDifusionBase(BaseModel):
-    cliente_id: int
+    organizacion_id: int
     categoria: str
     etiqueta: str
     etiqueta_original: Optional[str] = None
@@ -97,14 +131,12 @@ class MedioDifusionSalida(MedioDifusionBase):
     class Config:
         orm_mode = True
 
-
 # --- Denuncias ---
 
 class DenunciaBase(BaseModel):
-    cliente_id: int
     categoria_id: int
     titulo: str
-    titulo_original: Optional[str] = None  # ✅ ESTA ES LA CLAVE
+    titulo_original: Optional[str] = None
     descripcion: Optional[str] = None
     ejemplos: Optional[List[str]] = []
     preguntaAdicional: Optional[str] = ""
@@ -119,7 +151,7 @@ class DenunciaCrear(DenunciaBase):
 class DenunciaSalida(DenunciaBase):
     id: int
     titulo_original: str
-    categoria_titulo: Optional[str] = None  # útil para mostrar el nombre de la categoría si lo agregas al response
+    categoria_titulo: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -127,7 +159,7 @@ class DenunciaSalida(DenunciaBase):
 # --- Sugerencias ---
 
 class SugerenciaBase(BaseModel):
-    cliente_id: int
+    organizacion_id: int
     titulo: str
     descripcion: Optional[str] = None
     titulo_original: Optional[str] = None
@@ -144,7 +176,7 @@ class SugerenciaSalida(SugerenciaBase):
 # --- Preguntas ---
 
 class PreguntaBase(BaseModel):
-    cliente_id: int
+    organizacion_id: int
     titulo: str
     descripcion: Optional[str] = None
     titulo_original: Optional[str] = None
@@ -161,25 +193,26 @@ class PreguntaSalida(PreguntaBase):
 # --- Datos Generales ---
 
 class DatosGeneralesCrear(BaseModel):
-    plan: str
-    atencion_personalizada: bool
-    numero_empleados: int
-    giro: str
-    idiomas_operacion: List[str]
-    paises_operacion: List[str]
-    nombre_comercial: str
+    plan: Optional[str] = None
+    atencion_personalizada: Optional[bool] = None
+    numero_empleados: Optional[int] = None
+    giro: Optional[str] = None
+    idiomas_operacion: Optional[List[str]] = None
+    paises_operacion: Optional[List[str]] = None
+    nombre_comercial: Optional[str] = None
     descripcion: Optional[str] = None
-    dominio: str
+    dominio: Optional[str] = None
     logotipo_url: Optional[str] = None
-    nombre_usuario_admin: str
-    correo_usuario_admin: str
-    telefono_usuario_admin: str
-    pais: str
-    estado: str
-    cp: str
-    ciudad: str
-    acceso_modulo_contable: bool
+    nombre_usuario_admin: Optional[str] = None
+    correo_usuario_admin: Optional[str] = None
+    telefono_usuario_admin: Optional[str] = None
+    pais: Optional[str] = None
+    estado: Optional[str] = None
+    cp: Optional[str] = None
+    ciudad: Optional[str] = None
+    acceso_modulo_contable: Optional[bool] = None
     usuario_foto_url: Optional[str] = None
+    organizacion_id: int  # Este sí es obligatorio para hacer el filtro multitenant
 
 class DatosGeneralesSalida(DatosGeneralesCrear):
     id: int
@@ -187,11 +220,9 @@ class DatosGeneralesSalida(DatosGeneralesCrear):
     class Config:
         orm_mode = True
 
-
 # --- Categoría de Denuncia ---
 
 class CategoriaDenunciaBase(BaseModel):
-    cliente_id: int
     titulo: str
     descripcion: Optional[str] = ""
     orden: Optional[int] = None
@@ -201,9 +232,12 @@ class CategoriaDenunciaCrear(CategoriaDenunciaBase):
 
 class CategoriaDenunciaSalida(CategoriaDenunciaBase):
     id: int
+    organizacion_id: int  # solo aquí
 
     class Config:
         orm_mode = True
+
+
 
 # --- Tipo de denuncia template ---
 
@@ -229,7 +263,8 @@ class TipoDenunciaTemplateOut(TipoDenunciaTemplateCrear):
 class UsuarioBase(BaseModel):
     nombre: str
     correo: str
-    contrasena: str  # ⚠️ En producción se recomienda usar hashing antes de guardar
+    contrasena: str
+    organizacion_id: int  # ✅ FALTABA AQUÍ
     apellido: Optional[str] = None
     telefono: Optional[str] = None
     genero: Optional[str] = None
@@ -248,7 +283,8 @@ class UsuarioCrear(UsuarioBase):
 class UsuarioSalida(BaseModel):
     id: int
     nombre: str
-    correo: EmailStr 
+    correo: EmailStr
+    organizacion_id: int  # ✅ FALTABA AQUÍ TAMBIÉN
     apellido: Optional[str] = None
     telefono: Optional[str] = None
     genero: Optional[str] = None
@@ -264,27 +300,39 @@ class UsuarioSalida(BaseModel):
     class Config:
         orm_mode = True
 
-
-
 # --- Usuario de acceso al sistema (login) ---
 
 class UsuarioAccesoBase(BaseModel):
     correo: EmailStr
-    rol: str = "cliente"  # El rol por default
-    organizacion: Optional[str] = None 
+    rol: str = "cliente"
 
 class UsuarioAccesoCrear(UsuarioAccesoBase):
     contrasena: str
-    cliente_id: Optional[int] = None
     es_admin: bool = False
-    organizacion: Optional[str] = None
+    organizacion_id: Optional[int] = None
 
 class UsuarioAccesoSalida(UsuarioAccesoBase):
     id: int
-    cliente_id: Optional[int] = None
     es_admin: bool = False
     rol: str
-    organizacion: Optional[str] = None 
+    organizacion_id: Optional[int] = None
+    organizacion: Optional['OrganizacionSalida'] = None
 
     class Config:
-        from_attributes = True  # O usa orm_mode = True si tu versión es vieja
+        orm_mode = True
+
+# --- Banderas ---
+
+class BanderaBase(BaseModel):
+    color: str
+    titulo: str
+
+class BanderaCrear(BanderaBase):
+    organizacion_id: int
+
+class BanderaSalida(BanderaBase):
+    id: int
+    organizacion_id: int
+
+    class Config:
+        orm_mode = True

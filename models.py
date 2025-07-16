@@ -1,8 +1,8 @@
-from sqlalchemy import Column, Integer, String, Boolean, JSON, ARRAY
+from sqlalchemy import Column, Integer, String, Boolean, JSON, ARRAY, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import JSONB
-from database import Base
 from sqlalchemy.orm import relationship
-from sqlalchemy import ForeignKey
+from database import Base
+from datetime import datetime
 
 # === MODELO: Cliente ===
 class Cliente(Base):
@@ -26,7 +26,8 @@ class CentroTrabajo(Base):
     direccion = Column(String)
     cp = Column(String)
     telefono = Column(String)
-    filtros_personalizados = Column(JSONB)
+    filtros_personalizados = Column(JSONB, default=dict)
+    organizacion_id = Column(Integer, nullable=False)
 
 # === MODELO: Filtro Personalizado ===
 class FiltroPersonalizado(Base):
@@ -35,13 +36,22 @@ class FiltroPersonalizado(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False, unique=True)
     valores = Column(JSONB, nullable=False)
+    organizacion_id = Column(Integer, nullable=False)
+
+class ConfiguracionFiltros(Base):
+    __tablename__ = "configuracion_filtros"
+
+    id = Column(Integer, primary_key=True, index=True)
+    organizacion_id = Column(Integer, nullable=False, index=True)
+    filtros_activos = Column(ARRAY(String), nullable=False, default=[])
+    orden_filtros = Column(ARRAY(String), nullable=False, default=[])
 
 # === MODELO: Tipo de Reportante ===
 class TipoReportante(Base):
     __tablename__ = "tipos_reportante"
 
     id = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, nullable=False)
+    organizacion_id = Column(Integer, nullable=False)  # ← CAMBIO AQUÍ
     tipo_base = Column(String, nullable=False)
     etiqueta = Column(String, nullable=False)
     etiqueta_original = Column(String, nullable=True)
@@ -54,8 +64,8 @@ class CierreCatalogo(Base):
     __tablename__ = "catalogo_cierres"
 
     id = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, nullable=False)
-    categoria = Column(String, nullable=False)  # "sancion", "premio", "medida", etc.
+    organizacion_id = Column(Integer, nullable=False)  # ← CAMBIO AQUÍ
+    categoria = Column(String, nullable=False)
     etiqueta = Column(String, nullable=False)
     etiqueta_original = Column(String, nullable=True)
     descripcion = Column(String)
@@ -68,7 +78,7 @@ class MedioDifusion(Base):
     __tablename__ = "medios_difusion"
 
     id = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, nullable=False)
+    organizacion_id = Column(Integer, nullable=False)  # ← CAMBIO AQUÍ
     categoria = Column(String, nullable=False)
     etiqueta = Column(String, nullable=False)
     etiqueta_original = Column(String, nullable=True)
@@ -82,7 +92,7 @@ class Denuncia(Base):
     __tablename__ = "denuncias"
 
     id = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, nullable=False)
+    organizacion_id = Column(Integer, nullable=False)  # ← CAMBIO AQUÍ
     categoria_id = Column(Integer, nullable=False)
     titulo = Column(String, nullable=False)
     titulo_original = Column(String, nullable=False)
@@ -100,7 +110,7 @@ class Sugerencia(Base):
     __tablename__ = "sugerencias"
 
     id = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, nullable=False)
+    organizacion_id = Column(Integer, nullable=False)  # ← CAMBIO AQUÍ
     titulo = Column(String, nullable=False)
     descripcion = Column(String)
     titulo_original = Column(String)
@@ -110,7 +120,7 @@ class Pregunta(Base):
     __tablename__ = "preguntas"
 
     id = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, nullable=False)
+    organizacion_id = Column(Integer, nullable=False)  # ← CAMBIO AQUÍ
     titulo = Column(String, nullable=False)
     descripcion = Column(String)
     titulo_original = Column(String)
@@ -145,6 +155,7 @@ class DatosGenerales(Base):
     ciudad = Column(String, nullable=True)
     cp = Column(String, nullable=True)
     usuario_foto_url = Column(String, nullable=True)
+    organizacion_id = Column(Integer, nullable=False)
 
 
     # === MODELO: Categoría de Denuncia ===
@@ -152,7 +163,7 @@ class CategoriaDenuncia(Base):
     __tablename__ = "categorias_denuncia"
 
     id = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, nullable=False)
+    organizacion_id = Column(Integer, nullable=False)  # ← CAMBIO AQUÍ
     titulo = Column(String, nullable=False)
     descripcion = Column(String, nullable=True)
     orden = Column(Integer, nullable=True)
@@ -191,6 +202,9 @@ class Usuario(Base):
     contrasena = Column(String, nullable=True)
     permisos = Column(JSONB, nullable=False, default=dict)
 
+    organizacion_id = Column(Integer, ForeignKey("organizaciones.id"), nullable=False)
+    organizacion = relationship("Organizacion", back_populates="usuarios")
+
 
     # === MODELO: Usuario de acceso al sistema (para login) ===
 class UsuarioAcceso(Base):
@@ -199,8 +213,30 @@ class UsuarioAcceso(Base):
     id = Column(Integer, primary_key=True, index=True)
     correo = Column(String, unique=True, nullable=False)
     contrasena = Column(String, nullable=False)
-    # Puedes asociarlo a cliente (opcional, si tu sistema es multicliente)
-    cliente_id = Column(Integer, nullable=True)
     es_admin = Column(Boolean, default=False)
     rol = Column(String, nullable=False, default="cliente")
-    organizacion = Column(String, nullable=True)
+
+    organizacion_id = Column(Integer, ForeignKey("organizaciones.id"), nullable=True)
+    organizacion = relationship("Organizacion", back_populates="usuarios_acceso")
+
+# === MODELO: Organizacion para multitenant ===
+class Organizacion(Base):
+    __tablename__ = "organizaciones"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, unique=True, nullable=False)
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+
+    usuarios_acceso = relationship("UsuarioAcceso", back_populates="organizacion")
+    usuarios = relationship("Usuario", back_populates="organizacion")
+
+
+# === MODELO: Componente Banderas ===
+
+class Bandera(Base):
+    __tablename__ = "banderas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    color = Column(String, nullable=False)
+    titulo = Column(String, nullable=False)
+    organizacion_id = Column(Integer, ForeignKey("organizaciones.id"), nullable=False)

@@ -1,3 +1,4 @@
+// Archivo completo ya corregido
 import { useEffect, useState } from 'react';
 
 export default function DatosGenerales() {
@@ -20,20 +21,14 @@ export default function DatosGenerales() {
 
   const [estadosDisponibles, setEstadosDisponibles] = useState([]);
   const [ciudadesDisponibles, setCiudadesDisponibles] = useState([]);
-
   const [ubicaciones, setUbicaciones] = useState([]);
 
   const [nombreComercial, setNombreComercial] = useState('');
   const [descripcionOrg, setDescripcionOrg] = useState('');
 
   const [usuario, setUsuario] = useState({
-    nombre: '',
-    telefono: '',
-    email: '',
-    pais: '',
-    estado: '',
-    cp: '',
-    ciudad: '',
+    nombre: '', telefono: '', email: '',
+    pais: '', estado: '', cp: '', ciudad: ''
   });
 
   const [accesoContable, setAccesoContable] = useState(false);
@@ -69,6 +64,8 @@ export default function DatosGenerales() {
     "Organismos internacionales y diplomáticos"
   ];
 
+  const organizacion_id = JSON.parse(localStorage.getItem("usuario"))?.organizacion_id;
+
   useEffect(() => {
     fetch('/ubicaciones.json')
       .then(res => res.json())
@@ -81,7 +78,7 @@ export default function DatosGenerales() {
       .then(res => res.json())
       .then(data => setIdiomasDisponibles(data.map(i => i.traducciones?.es).filter(Boolean)));
 
-    fetch('http://localhost:8000/datos-generales')
+    fetch(`http://localhost:8000/datos-generales?organizacion_id=${organizacion_id}`)
       .then(res => {
         if (!res.ok) throw new Error("No hay datos");
         return res.json();
@@ -147,42 +144,56 @@ export default function DatosGenerales() {
   };
 
   const guardarDatos = () => {
+    const usuarioLocal = JSON.parse(localStorage.getItem("usuario") || "{}");
+
+    const limpiar = (valor) => valor === undefined || valor === "" ? null : valor;
+
     const datos = {
-      plan,
-      atencion_personalizada: conAsesores,
-      numero_empleados: parseInt(empleados),
-      giro,
+      plan: limpiar(plan),
+      atencion_personalizada: !!conAsesores,
+      numero_empleados: empleados ? parseInt(empleados) : undefined,
+      giro: limpiar(giro),
       idiomas_operacion: idiomasOperacion,
       paises_operacion: paisesOperacion,
-      nombre_comercial: nombreComercial,
-      descripcion: descripcionOrg,
-      dominio: dominioValor,
-      logotipo_url: archivoLogo ? archivoLogo.name : '',
-      nombre_usuario_admin: usuario.nombre,
-      correo_usuario_admin: usuario.email,
-      telefono_usuario_admin: usuario.telefono,
-      pais: usuario.pais,
-      estado: usuario.estado,
-      cp: usuario.cp,
-      ciudad: usuario.ciudad,
-      acceso_modulo_contable: accesoContable
+      nombre_comercial: limpiar(nombreComercial),
+      descripcion: limpiar(descripcionOrg),
+      dominio: limpiar(dominioValor),
+      logotipo_url: archivoLogo?.name || undefined,
+      nombre_usuario_admin: limpiar(usuario.nombre),
+      correo_usuario_admin: limpiar(usuario.email),
+      telefono_usuario_admin: limpiar(usuario.telefono),
+      pais: limpiar(usuario.pais),
+      estado: limpiar(usuario.estado),
+      cp: limpiar(usuario.cp),
+      ciudad: limpiar(usuario.ciudad),
+      acceso_modulo_contable: !!accesoContable,
+      usuario_foto_url: fotoAdmin?.name || undefined,
+      organizacion_id: parseInt(usuarioLocal.organizacion_id)
     };
 
     fetch(`http://localhost:8000/datos-generales${idDatos ? `/${idDatos}` : ''}`, {
       method: idDatos ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Usuario-Id': usuarioLocal.usuario_id,
+        'X-Organizacion-Id': usuarioLocal.organizacion_id
+      },
       body: JSON.stringify(datos)
     })
-    .then(res => res.ok ? res.json() : Promise.reject())
-    .then(data => {
-      setIdDatos(data.id || idDatos);
-      setModoEdicion(false);
-      setDatosGuardados(datos);
-    })
-    .catch(() => alert('Error al guardar'));
+      .then(res => res.ok ? res.json() : res.json().then(err => Promise.reject(err)))
+      .then(data => {
+        setIdDatos(data.id || idDatos);
+        setModoEdicion(false);
+        setDatosGuardados(datos);
+      })
+      .catch(err => {
+        console.error('Error al guardar:', err);
+        alert('Error al guardar');
+      });
   };
 
   return (
+
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       {!modoEdicion && datosGuardados ? (
         <div className="border p-4 rounded shadow bg-gray-50 space-y-4">
